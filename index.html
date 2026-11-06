@@ -39,7 +39,7 @@ main.wrap{padding-block:18px 32px;display:flex;flex-direction:column;gap:14px}
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media(min-width:620px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .hist{display:grid;gap:12px}
-.hs{margin-bottom:6px}.ht th,.ht td{padding:7px 5px;font-size:13px}.ht td small{color:var(--muted);font-size:11px}.h3{font-size:14px;margin:16px 0 8px}
+.hs{margin-bottom:6px}.ht tr.cur td{background:var(--ok-soft)}.ht th,.ht td{padding:7px 5px;font-size:13px}.ht td small{color:var(--muted);font-size:11px}.h3{font-size:14px;margin:16px 0 8px}
 .more{margin-top:12px}.more summary{cursor:pointer;font-weight:600;color:var(--tide);font-size:14px;padding:6px 0}.more .hist{margin-top:8px}
 .chart .vl{font-size:10px;font-weight:700;fill:currentColor}
 .cyc{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card)}
@@ -138,8 +138,8 @@ function histCard(p){const f2=v=>Number(v).toLocaleString("vi-VN",{minimumFracti
   const bars=A.map((c,i)=>{const x=pl+i*bw+bw*0.18,w=bw*0.64,v=c.surv||0,h=(Hh-pb-pt)*v/100,y=Hh-pb-h;const col=c.result==="cancel"?"var(--bad)":c.result==="early"?"var(--warn)":"var(--tide)";
    return`<rect x="${x}" y="${y}" width="${w}" height="${Math.max(h,1.5)}" rx="3" fill="${col}"/><text x="${x+w/2}" y="${y-5}" text-anchor="middle" class="vl">${c.fcr!=null?f2(c.fcr):"–"}</text><text x="${x+w/2}" y="${Hh-6}" text-anchor="middle">V${c.no}</text>`}).join("");
   const chart=`<svg class="chart" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Tỷ lệ sống và FCR theo vụ">${g}${bars}</svg><p class="note">Cột: tỷ lệ sống từng vụ · số trên cột: FCR. Xanh = thu hoạch, cam = thu sớm, đỏ = huỷ ao.</p>`;
-  const tbl=`<div class="tbl"><table class="ht"><tr><th>Vụ</th><th>Ngày</th><th>Thu (kg)</th><th>Size</th><th>TLS</th><th>FCR</th></tr>${H.map(c=>{const r=RS[c.result]||RS.end;return`<tr><td><b>V${c.no}</b><br><small>${vs(c.endDate)}/${c.endDate.slice(2,4)}</small></td><td>${c.days}</td><td>${c.kg?nf(c.kg,0):`<span class="tag ${r[0]}">${r[1]}</span>`}</td><td>${c.size?nf(c.size,0):"–"}</td><td>${c.surv!=null?nf(c.surv,0)+"%":"–"}</td><td>${c.fcr!=null?f2(c.fcr):"–"}</td></tr>`}).join("")}</table></div>`;
-  return`<section class="card"><h2>Lịch sử các vụ nuôi <small>${H.length} vụ đã kết thúc</small></h2>
+  const tbl=`<div class="tbl"><table class="ht"><tr><th>Vụ</th><th>Ngày</th><th>Thu (kg)</th><th>Size</th><th>TLS</th><th>FCR</th></tr>${p.status==="active"?(()=>{const lw=p.weights.length?p.weights[p.weights.length-1]:null;return`<tr class="cur"><td><b>V${H[0].no+1}</b><br><small>đang nuôi</small></td><td>${p.doc}</td><td><span class="tag ok">Đang nuôi</span></td><td>${lw?nf(1000/lw.w,0):"–"}</td><td>–</td><td>–</td></tr>`})():""}${H.map(c=>{const r=RS[c.result]||RS.end;return`<tr><td><b>V${c.no}</b><br><small>${vs(c.endDate)}/${c.endDate.slice(2,4)}</small></td><td>${c.days}</td><td>${c.kg?nf(c.kg,0):`<span class="tag ${r[0]}">${r[1]}</span>`}</td><td>${c.size?nf(c.size,0):"–"}</td><td>${c.surv!=null?nf(c.surv,0)+"%":"–"}</td><td>${c.fcr!=null?f2(c.fcr):"–"}</td></tr>`}).join("")}</table></div>`;
+  return`<section class="card"><h2>Lịch sử các vụ nuôi <small>${H.length} vụ đã kết thúc${p.status==="active"?" + vụ hiện tại":""}</small></h2>
    <div class="stats hs"><div class="stat"><span>Số vụ</span><b>${H.length}</b><small>${ok.length} vụ có thu hoạch</small></div>
    <div class="stat"><span>Tỷ lệ sống TB</span><b>${svAvg!=null?nf(svAvg,1)+"%":"–"}</b><small>các vụ có thu</small></div>
    <div class="stat"><span>FCR TB</span><b>${fcrAvg!=null?f2(fcrAvg):"–"}</b><small>tính trên tổng</small></div>
