@@ -154,7 +154,7 @@ function render(){
   const foot=`<footer>ShrimpVet ESG Farm · Minh Phu AquaMekong Co., Ltd · Gành Hào, Cà Mau<br>Số liệu cập nhật ngày ${vn(DATA.updated)}</footer>`;
   if(!DATA.ponds[id]){
     hd.innerHTML=`<div class="farm">Gành Hào · Cà Mau</div><h1>Hồ sơ ao nuôi</h1><div class="sub"><span class="pill"><i></i>${ids.filter(k=>DATA.ponds[k].status==="active").length} ao đang nuôi</span><span>Cập nhật ${vn(DATA.updated)}</span></div>`;
-    app.innerHTML=`<p class="intro">Chọn một ao để xem số liệu: tăng trưởng, lượng thức ăn, chất lượng nước và kết quả xét nghiệm.</p>${others}${foot}`;document.title="Ao nuôi ShrimpVet ESG Farm";return}
+    app.innerHTML=`<p class="intro">Chọn một ao để xem số liệu: tăng trưởng, lượng thức ăn, chất lượng nước và kết quả xét nghiệm.</p><p class="intro" style="margin-top:-4px"><a href="so-do/" style="display:inline-flex;align-items:center;gap:8px;background:var(--brand,#1d3f74);color:#fff;text-decoration:none;font-weight:600;padding:9px 14px;border-radius:10px">Xem sơ đồ trang trại →</a></p>${others}${foot}`;document.title="Ao nuôi ShrimpVet ESG Farm";return}
   const p=DATA.ponds[id];document.title="Ao "+id+" · ShrimpVet ESG Farm";
   hd.innerHTML=`<div class="farm">Gành Hào · Cà Mau</div><h1>Ao ${esc(id)}</h1><div class="sub"><span class="pill ${p.status==="active"?"":"off"}"><i></i>${ST[p.status]}</span><span>Diện tích ${nf(p.area,0)} m²</span><span>Cập nhật ${vn(DATA.updated)}</span></div>`;
   let h=`<p class="intro">Số liệu của ao được ghi nhận hằng ngày trên hệ thống quản lý số của farm: thức ăn, môi trường nước, tăng trưởng và xét nghiệm.</p>`;
