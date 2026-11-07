@@ -122,7 +122,7 @@ const defaultArea = p => p === "D6" ? 1520 : /^[AB]/.test(p) ? 2025 : 1600;
 function toast(m){ const t=$("#toast"); t.textContent=m; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,3200); }
 
 /* ===== Trạng thái ===== */
-const S = { user:null, email:"", me:null, users:{}, ponds:{}, cycles:{}, logs:{}, items:{}, moves:[], fin:[], harv:[], started:false, err:"" };
+const S = { user:null, email:"", me:null, users:{}, ponds:{}, cycles:{}, logs:{}, items:{}, moves:[], fin:[], harv:[], tests:[], started:false, err:"" };
 const UI = { tab:null, pond:null, date:today(), startPond:null, finMonth:today().slice(0,7) };
 let unsubs = [];
 const isOwner = () => OWNER_EMAIL && S.email === OWNER_EMAIL.toLowerCase();
@@ -144,7 +144,7 @@ const sortedItems = grp => Object.entries(S.items).filter(([,v]) => !grp || (grp
 $("#logout").onclick = () => signOut(auth);
 onAuthStateChanged(auth, u => {
   unsubs.forEach(f => f()); unsubs = [];
-  Object.assign(S, { user:u, me:null, started:false, err:"", users:{}, ponds:{}, cycles:{}, logs:{}, items:{}, moves:[], fin:[], harv:[] });
+  Object.assign(S, { user:u, me:null, started:false, err:"", users:{}, ponds:{}, cycles:{}, logs:{}, items:{}, moves:[], fin:[], harv:[], tests:[] });
   $("#logout").hidden = !u;
   if (!u) { renderLogin(); return; }
   S.email = (u.email || "").toLowerCase();
@@ -183,6 +183,7 @@ function startData(){
   listen(query(collection(db,"logs"), where("date", ">=", addDays(today(), -LOG_WINDOW_DAYS))), s => { S.logs = {}; s.forEach(d => S.logs[d.id] = d.data()); render(); });
   listen(collection(db,"harvests"), s => { S.harv = s.docs.map(d => Object.assign({ id:d.id }, d.data())); render(); });
   listen(query(collection(db,"stockMoves"), orderBy("date","desc"), limit(300)), s => { S.moves = s.docs.map(d => Object.assign({ id:d.id }, d.data())); render(); });
+  listen(collection(db,"tests"), s => { S.tests = s.docs.map(d => Object.assign({ id:d.id }, d.data())); render(); });
   if (can.fin()) listen(collection(db,"finance"), s => { S.fin = s.docs.map(d => Object.assign({ id:d.id }, d.data())); render(); });
 }
 
@@ -191,6 +192,7 @@ function tabsFor(){
   const r = role(), t = [];
   if (["admin","kythuat","ao"].includes(r)) t.push(["ao","Ao nuôi"]);
   if (["admin","kythuat"].includes(r)) t.push(["vu","Vụ nuôi & phân công"]);
+  if (["admin","kythuat"].includes(r)) t.push(["xn","Xét nghiệm"]);
   if (["admin","kho","kythuat"].includes(r)) t.push(["kho","Kho"]);
   if (can.fin()) t.push(["fin","Thu – chi"]);
   if (r === "admin") t.push(["ql","Quản lý"]);
@@ -217,7 +219,7 @@ function render(){
   nav.querySelector(".in").innerHTML = tabs.map(([k,n]) => `<button data-tab="${k}" class="${k===UI.tab?"on":""}">${n}</button>`).join("");
   let h = `<div class="small mut">Vai trò: <b>${ROLES[role()]}</b></div>`;
   if (S.err) h += `<div class="banner err">${esc(S.err)}</div>`;
-  h += ({ ao:vAo, vu:vVu, kho:vKho, fin:vFin, ql:vQl })[UI.tab]();
+  h += ({ ao:vAo, vu:vVu, xn:vXn, kho:vKho, fin:vFin, ql:vQl })[UI.tab]();
   $("#main").innerHTML = h;
 }
 $("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.tab = b.dataset.tab; UI.pond = null; rerender(); window.scrollTo(0,0); });
@@ -422,6 +424,76 @@ document.addEventListener("click", async e => {
   if (hd && confirm("Xoá dòng thu hoạch này?")) { try { await deleteDoc(doc(db,"harvests",hd.dataset.hdel)); toast("Đã xoá."); } catch (er) { toast("Không xoá được."); } }
 });
 
+/* ===== Xét nghiệm ===== */
+const PCR_RES = { neg:"Không phát hiện", susp:"Nghi ngờ", pos:"Phát hiện" };
+const vib = (v, lt) => v == null ? "–" : (lt ? "<" : "") + nf0.format(v);
+function testResult(t){
+  if (t.type === "pcr") return `<b>${esc(t.target || "")}</b>: <span class="chip ${t.result==="pos"?"r":t.result==="susp"?"y":"g"}">${PCR_RES[t.result] || esc(t.result)}</span>${t.ct != null ? ` Ct ${fmt(t.ct)}` : ""}`;
+  return `Vàng ${vib(t.yellow,t.yLt)} · Xanh ${vib(t.green,t.gLt)} · Tổng ${vib(t.total,t.tLt)} <span class="small mut">CFU/ml</span>`;
+}
+function vXn(){
+  const pf = UI.tp || "all";
+  const list = S.tests.filter(t => pf === "all" || t.pond === pf).sort((a,b) => b.date.localeCompare(a.date) || a.pond.localeCompare(b.pond));
+  const latest = {};
+  S.tests.forEach(t => { if (t.type !== "pcr") return; const k = t.pond + "|" + t.target; if (!latest[k] || latest[k].date < t.date) latest[k] = t; });
+  const pos = Object.values(latest).filter(t => t.result === "pos" && activeCycle(t.pond) && activeCycle(t.pond).id === t.cycleId);
+  return `<h2>Xét nghiệm</h2>
+  ${pos.length ? `<div class="banner err">⚠ Ao đang nuôi có kết quả PCR dương tính gần nhất: ${pos.map(t => `<b>${esc(t.pond)}</b> ${esc(t.target)} (${vnDate(t.date)})`).join(" · ")}</div>` : ""}
+  <div class="panel"><h3 style="margin-top:0">Thêm kết quả</h3>
+    <div class="f2">
+      <div><label>Loại</label><select id="xtype"><option value="vibrio">Vibrio</option><option value="pcr">PCR</option></select></div>
+      <div><label>Ngày lấy mẫu</label><input type="date" id="xdate" value="${today()}" max="${today()}"></div>
+      <div><label>Ao</label><select id="xpond">${POND_IDS.map(p => `<option>${p}</option>`).join("")}</select></div>
+      <div><label>Loại mẫu</label><select id="xsample">${["Nước ao","Tôm thịt thẻ sống","Tôm thịt thẻ chết","Tôm thịt thẻ ướp lạnh","Khác"].map(v => `<option>${v}</option>`).join("")}</select></div>
+    </div>
+    <div class="f2" id="xvib" style="margin-top:10px">
+      <div><label>Vibrio vàng (CFU/ml)</label><input id="xy" placeholder="vd 2000 hoặc <10"></div>
+      <div><label>Vibrio xanh (CFU/ml)</label><input id="xg" placeholder="vd 10 hoặc <10"></div>
+      <div><label>Vibrio tổng (CFU/ml)</label><input id="xt" placeholder="vd 2010"></div>
+    </div>
+    <div class="f2" id="xpcr" hidden style="margin-top:10px">
+      <div><label>Bệnh</label><input id="xtarget" list="xtargets" placeholder="EHP, EMS/AHPND, TPD, WSSV…"><datalist id="xtargets"><option>EHP</option><option>EMS/AHPND</option><option>TPD</option><option>WSSV</option><option>IHHNV</option></datalist></div>
+      <div><label>Kết quả</label><select id="xres"><option value="neg">Không phát hiện</option><option value="susp">Nghi ngờ</option><option value="pos">Phát hiện</option></select></div>
+      <div><label>Ct (nếu có)</label><input id="xct" inputmode="decimal"></div>
+      <div><label>Số phiếu</label><input id="xcode"></div>
+    </div>
+    <div style="margin-top:10px"><label>Ghi chú</label><input id="xnote" placeholder="Phòng lab, giờ nhận mẫu…"></div>
+    <div class="acts"><button class="btn p" data-xsave>Lưu kết quả</button></div>
+    <p class="small mut">PCR: dương tính khi Ct &lt; 35; nghi ngờ khi 35 ≤ Ct ≤ 40 (theo phiếu ShrimpVet Lab). Vibrio dưới ngưỡng phát hiện ghi “&lt;10”.</p>
+  </div>
+  <div class="f2" style="max-width:220px"><div><label>Xem ao</label><select id="xfilter"><option value="all">Tất cả ao</option>${POND_IDS.map(p => `<option ${pf===p?"selected":""}>${p}</option>`).join("")}</select></div></div>
+  <h3>Kết quả (${list.length})</h3>
+  ${list.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Ao</th><th>Loại</th><th>Mẫu</th><th>Kết quả</th><th>Ghi chú</th><th>Người nhập</th><th></th></tr>
+  ${list.map(t => `<tr><td>${vnDate(t.date)}</td><td><b>${esc(t.pond)}</b></td><td>${t.type==="pcr"?"PCR":"Vibrio"}</td><td class="small">${esc(t.sample||"")}</td><td>${testResult(t)}</td><td class="small">${esc([t.code ? "Phiếu " + t.code : "", t.note].filter(Boolean).join(" · "))}</td><td class="small mut">${esc(userName(t.by))}</td><td><button class="btn s d" data-xdel="${t.id}">Xoá</button></td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có kết quả.</p>`}`;
+}
+const parseVib = raw => { const s = String(raw || "").trim(); if (!s) return { v:null, lt:false }; const lt = s.startsWith("<"); const v = num(s.replace("<","").replace(/\./g,"")); return isNaN(v) ? null : { v, lt }; };
+document.addEventListener("change", e => {
+  if (e.target.id === "xtype") { $("#xvib").hidden = e.target.value !== "vibrio"; $("#xpcr").hidden = e.target.value !== "pcr"; }
+  if (e.target.id === "xfilter") { UI.tp = e.target.value; rerender(); }
+});
+document.addEventListener("click", async e => {
+  if (e.target.closest("[data-xsave]")) {
+    const type = $("#xtype").value, d = $("#xdate").value, p = $("#xpond").value;
+    if (!d) return toast("Chưa chọn ngày.");
+    const cy = activeCycle(p);
+    const r = { type, date:d, pond:p, cycleId:cy ? cy.id : null, sample:$("#xsample").value, note:$("#xnote").value.trim(), by:S.email, at:serverTimestamp() };
+    if (type === "vibrio") {
+      const y = parseVib($("#xy").value), g = parseVib($("#xg").value), t = parseVib($("#xt").value);
+      if (!y || !g || !t) return toast("Số Vibrio không hợp lệ.");
+      if (y.v == null && g.v == null && t.v == null) return toast("Chưa nhập số Vibrio.");
+      Object.assign(r, { yellow:y.v, yLt:y.lt, green:g.v, gLt:g.lt, total:t.v, tLt:t.lt });
+    } else {
+      const target = $("#xtarget").value.trim(), ct = num($("#xct").value);
+      if (!target) return toast("Chưa nhập tên bệnh.");
+      Object.assign(r, { target, result:$("#xres").value, ct:isNaN(ct) ? null : ct, code:$("#xcode").value.trim() });
+    }
+    try { await setDoc(doc(collection(db,"tests")), r); toast("Đã lưu kết quả ao " + p); rerender(); } catch (er) { console.error(er); toast(er.code === "permission-denied" ? "Không có quyền lưu (kiểm tra luật bảo mật mới)." : "Không lưu được."); }
+    return;
+  }
+  const xd = e.target.closest("[data-xdel]");
+  if (xd && confirm("Xoá kết quả xét nghiệm này?")) { try { await deleteDoc(doc(db,"tests",xd.dataset.xdel)); toast("Đã xoá."); } catch (er) { toast("Không xoá được."); } }
+});
+
 /* ===== Kho ===== */
 function vKho(){
   const edit = can.kho();
@@ -589,7 +661,7 @@ document.addEventListener("change", async e => {
     UI.impHtml = `<div class="banner okb" style="margin-top:12px">Dữ liệu app cũ đến hết <b>${vnDate(D.cutoff)}</b>:
       ${D.cycles.length} vụ nuôi (${D.cycles.filter(c=>c.status==="active").length} đang nuôi) ·
       <b>${newLogs.length}</b> ngày nhập liệu${D.logs.length - newLogs.length ? ` (bỏ qua ${D.logs.length - newLogs.length} ngày đã có)` : ""} ·
-      ${D.harvests.length} lần thu hoạch · ${D.moves.length} phiếu kho · ${D.finance.length} khoản thu–chi · ${P.newItems.length} mặt hàng mới.</div>
+      ${D.harvests.length} lần thu hoạch · ${D.moves.length} phiếu kho · ${D.finance.length} khoản thu–chi · ${(D.tests||[]).length} kết quả xét nghiệm · ${P.newItems.length} mặt hàng mới.</div>
       ${P.swap.length ? `<div class="banner"><b>Vụ nuôi sẽ được thay theo app cũ:</b><br>${P.swap.map(s => `Ao ${s.pond}: vụ thả ${vnDate(s.fromDate)} (nhập hôm nay) → vụ thả ${vnDate(s.toDate)} (app cũ)`).join("<br>")}<br><span class="small">Người phụ trách ao giữ nguyên; số liệu đã nhập trên trang mới được chuyển sang vụ đúng.</span></div>` : ""}
       ${P.base.length ? `<h3>Tồn kho</h3><div class="tw"><table><tr><th>Hàng</th><th class="r">Tồn app cũ (đến ${vnDate(D.cutoff)})</th><th class="r">Trang mới hiện tại</th><th>Xử lý</th></tr>
         ${P.base.map(b => `<tr><td>${esc(b.it.name)}</td><td class="r num">${fmt(b.it.oldStock)}</td><td class="r num">${fmt(b.cur)}</td><td class="small">${A[b.act]}${b.act==="add" ? ` → ${fmt(b.cur + b.it.oldStock)}` : ""}</td></tr>`).join("")}</table></div>
@@ -610,6 +682,7 @@ document.addEventListener("click", async e => {
     feeds:l.feeds.map(f => ({ item:K(f.key), kg:f.kg })), treats:l.treats.map(t => ({ item:K(t.key), qty:t.qty })), water:l.water, note:l.note, feedTotal:l.feedTotal, by:"app-cu", src:"app-cu", at:serverTimestamp() })));
   D.harvests.forEach(h => ops.push(b => b.set(doc(db,"harvests",h.id), { pond:h.pond, cycleId:h.cycleId, date:h.date, type:h.type, kg:h.kg, size:h.size ?? null, price:h.price ?? null, note:h.note, by:"app-cu", at:serverTimestamp() })));
   D.finance.forEach(f => ops.push(b => b.set(doc(db,"finance",f.id), { type:f.type, date:f.date, cat:f.cat, pond:f.pond, amount:f.amount, note:f.note, by:"app-cu", at:serverTimestamp() })));
+  (D.tests || []).forEach(({ id, ...t }) => ops.push(b => b.set(doc(db,"tests",id), Object.assign(t, { by:"app-cu", at:serverTimestamp() }))));
   D.moves.forEach(m => ops.push(b => b.set(doc(db,"stockMoves",m.id), { type:m.type, item:K(m.key), qty:m.qty, date:m.date, price:m.price ?? null, note:m.note, by:S.email, src:"app-cu", at:serverTimestamp() })));
   const last = [];
   P.base.filter(x => x.act === "add").forEach(x => {
@@ -631,7 +704,7 @@ document.addEventListener("click", async e => {
       btn.textContent = `Đang chép… ${Math.min(i + 400, ops.length)}/${ops.length}`;
     }
     if (last.length) { const b = writeBatch(db); last.forEach(f => f(b)); await b.commit(); }
-    UI.imp = null; UI.impHtml = `<div class="banner okb" style="margin-top:12px">✓ Đã chép xong: ${newLogs.length} ngày nhập liệu, ${D.cycles.length} vụ, ${D.harvests.length} thu hoạch, ${D.moves.length} phiếu kho, ${D.finance.length} khoản thu–chi.</div>`;
+    UI.imp = null; UI.impHtml = `<div class="banner okb" style="margin-top:12px">✓ Đã chép xong: ${newLogs.length} ngày nhập liệu, ${D.cycles.length} vụ, ${D.harvests.length} thu hoạch, ${D.moves.length} phiếu kho, ${D.finance.length} khoản thu–chi, ${(D.tests||[]).length} kết quả xét nghiệm.</div>`;
     toast("Đã chép dữ liệu app cũ."); rerender();
   } catch (er) { console.error(er); UI.imp = null; UI.impHtml = `<div class="banner err" style="margin-top:12px">Chép bị lỗi giữa chừng (${esc(er.code || er.message)}). Anh chọn lại file để chép tiếp, phần đã chép sẽ không bị trùng.</div>`; rerender(); }
 });
@@ -671,7 +744,7 @@ async function exportExcel(btn){
   try {
     const X = await loadXLSX();
     const all = async c => (await getDocs(collection(db, c))).docs.map(d => Object.assign({ id:d.id }, d.data()));
-    const [logs, moves, fin, cycles, harv] = await Promise.all(["logs","stockMoves","finance","cycles","harvests"].map(all));
+    const [logs, moves, fin, cycles, harv, tests] = await Promise.all(["logs","stockMoves","finance","cycles","harvests","tests"].map(all));
     const wb = X.utils.book_new();
     const add = (name, rows) => X.utils.book_append_sheet(wb, X.utils.json_to_sheet(rows.length ? rows : [{ "(trống)":"" }]), name);
     add("Nhật ký ao", logs.sort((a,b)=>a.date.localeCompare(b.date)||a.pond.localeCompare(b.pond)).map(l => Object.assign({ "Ngày":vnDate(l.date), "Ao":l.pond,
@@ -684,6 +757,9 @@ async function exportExcel(btn){
     add("Thu chi", fin.sort((a,b)=>a.date.localeCompare(b.date)).map(f => ({ "Ngày":vnDate(f.date), "Loại":f.type==="thu"?"Thu":"Chi", "Hạng mục":f.cat, "Ao":f.pond||"Chung", "Số tiền":f.amount, "Ghi chú":f.note||"", "Người nhập":userName(f.by) })));
     add("Vụ nuôi", cycles.sort((a,b)=>a.stockDate.localeCompare(b.stockDate)).map(c => ({ "Ao":c.pond, "Ngày thả":vnDate(c.stockDate), "Số con thả":c.stockCount, "Trạng thái":c.status==="done"?"Đã kết thúc":"Đang nuôi", "Ngày kết thúc":vnDate(c.endDate), "Ghi chú":c.note||"" })));
     add("Thu hoạch", harv.sort((a,b)=>a.date.localeCompare(b.date)).map(h => ({ "Ngày":vnDate(h.date), "Ao":h.pond, "Hình thức":HARV_TYPES[h.type]||h.type, "kg":h.kg, "Size":h.size??"", "Ghi chú":h.note||"", "Người nhập":userName(h.by) })));
+    add("Xét nghiệm", tests.sort((a,b)=>a.date.localeCompare(b.date)).map(t => ({ "Ngày":vnDate(t.date), "Ao":t.pond, "Loại":t.type==="pcr"?"PCR":"Vibrio", "Mẫu":t.sample||"",
+      "Bệnh":t.target||"", "Kết quả PCR":t.type==="pcr"?(PCR_RES[t.result]||t.result):"", "Ct":t.ct??"", "Vibrio vàng":t.type==="vibrio"?vib(t.yellow,t.yLt):"", "Vibrio xanh":t.type==="vibrio"?vib(t.green,t.gLt):"", "Vibrio tổng":t.type==="vibrio"?vib(t.total,t.tLt):"",
+      "Số phiếu":t.code||"", "Ghi chú":t.note||"", "Người nhập":userName(t.by) })));
     X.writeFile(wb, `ESGFarm_sao-luu_${today()}.xlsx`);
   } catch (e) { console.error(e); toast("Xuất không được: " + (e.code || e.message)); }
   finally { btn.disabled = false; btn.textContent = "Xuất dữ liệu ra Excel"; }
