@@ -7,28 +7,38 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
 <style>
-:root{--bg:#f1f5fa;--sf:#fff;--sunk:#e8eef6;--ink:#13233a;--mut:#5a6b82;--line:#d8e1ec;--ac:#1f6fd1;--acs:#dde9f9;--side:#0e2a4a;
---ok:#23804f;--oks:#dcf3e5;--warn:#a96a06;--warns:#fbefd6;--bad:#c03a26;--bads:#fbe3de;--r:10px;
+:root{--bg:#f3faf8;--sf:#fff;--sunk:#e9f5f2;--ink:#12343a;--mut:#4f6b6f;--line:#d6ebe6;--ac:#0a8a93;--acs:#dcf4f0;--side:#ffffff;--green:#2a9d5c;
+--ok:#23874f;--oks:#dcf3e5;--warn:#a96a06;--warns:#fbefd6;--bad:#c03a26;--bads:#fbe3de;--r:10px;
 font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
-header.top{background:var(--side);color:#fff;position:sticky;top:0;z-index:5}
+header.top{background:#fff;color:var(--ink);position:sticky;top:0;z-index:5;border-bottom:1px solid var(--line)}
 header .in{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-header b{font-size:17px}header small{display:block;color:#c5d3e6;font-size:12.5px}
-header button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;padding:7px 12px;font:inherit;font-size:13px;cursor:pointer}
-nav.tabs{background:var(--sf);border-bottom:1px solid var(--line);position:sticky;top:56px;z-index:4}
+header b{font-size:17px;color:var(--ac)}header small{display:block;color:var(--mut);font-size:12.5px}
+header .acts-h{display:flex;gap:8px;align-items:center}
+header button,header a.home{display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--ac);border:1.5px solid var(--ac);border-radius:9px;padding:7px 12px;font:inherit;font-weight:600;font-size:13.5px;cursor:pointer;text-decoration:none;white-space:nowrap}
+header a.home{background:var(--ac);color:#fff}
+header button:hover{background:var(--acs)}header a.home:hover{background:#0b6870}
+.brandbox{display:none}
+@media (max-width:520px){header .lg{display:none}header a.home span{display:none}header b{font-size:15px}header small{font-size:11.5px}}
+nav.tabs{background:var(--sf);border-bottom:1px solid var(--line);position:sticky;top:57px;z-index:4}
 nav.tabs .in{max-width:1100px;margin:0 auto;padding:0 10px;display:flex;gap:2px;overflow-x:auto}
 nav.tabs button{flex:0 0 auto;border:0;background:none;font:inherit;font-weight:600;font-size:14px;color:var(--mut);padding:11px 12px;border-bottom:3px solid transparent;cursor:pointer}
 nav.tabs button.on{color:var(--ac);border-bottom-color:var(--ac)}
 @media (min-width:1000px){
   body.side{padding-left:228px}
   body.side header.top .in,body.side .wrap{max-width:1180px}
-  body.side nav.tabs{position:fixed;left:0;top:0;bottom:0;width:228px;background:var(--side);border:0;z-index:6;padding-top:64px}
-  body.side nav.tabs .in{flex-direction:column;gap:2px;padding:10px;overflow:visible}
-  body.side nav.tabs button{color:#c5d3e6;border:0;border-radius:8px;padding:11px 12px;gap:10px}
-  body.side nav.tabs button:hover{background:rgba(255,255,255,.08)}
-  body.side nav.tabs button.on{background:var(--ac);color:#fff}
-  body.side header.top{z-index:7;left:0;right:0}
+  body.side nav.tabs{position:fixed;left:0;top:0;bottom:0;width:228px;background:linear-gradient(180deg,#ffffff 0%,#effaf7 100%);border:0;border-right:1px solid var(--line);z-index:8;display:flex;flex-direction:column}
+  body.side nav.tabs .brandbox{display:block;padding:18px 18px 14px;border-bottom:1px solid var(--line);text-decoration:none}
+  body.side nav.tabs .brandbox b{display:block;color:var(--ac);font-size:17px;font-weight:800;letter-spacing:-.01em}
+  body.side nav.tabs .brandbox span{display:block;color:var(--green);font-size:12.5px;font-weight:600}
+  body.side nav.tabs .in{flex-direction:column;gap:2px;padding:12px 10px;overflow-y:auto;flex:1;margin:0}
+  body.side nav.tabs button{color:var(--mut);border:0;border-radius:9px;padding:10px 12px;gap:10px}
+  body.side nav.tabs button:hover{background:var(--acs);color:var(--ac)}
+  body.side nav.tabs button.on{background:linear-gradient(135deg,var(--ac),#14a3a0);color:#fff;box-shadow:0 6px 14px -8px rgba(10,138,147,.7)}
+  body.side nav.tabs .backhome{display:flex;align-items:center;gap:8px;margin:10px;padding:10px 12px;border-radius:9px;color:var(--ac);font-weight:600;font-size:14px;text-decoration:none;border:1.5px solid var(--line)}
+  body.side nav.tabs .backhome:hover{border-color:var(--ac);background:#fff}
+  body.side header.top .who-brand{display:none}
 }
 @media (max-width:700px){
   body.side{padding-bottom:64px}
@@ -38,6 +48,7 @@ nav.tabs button.on{color:var(--ac);border-bottom-color:var(--ac)}
   body.side nav.tabs button{flex:0 0 72px;min-width:0;flex-direction:column;gap:2px;font-size:10px;padding:7px 0 6px;border-bottom:0;border-top:3px solid transparent;white-space:nowrap;overflow:hidden}
   body.side nav.tabs button.on{border-top-color:var(--ac)}
   body.side nav.tabs .ic{width:20px;height:20px}
+  body.side nav.tabs button.on{color:var(--ac)}
 }
 .wrap{max-width:1100px;margin:0 auto;padding:14px 16px 60px}
 h2{font-size:19px;margin:6px 0 10px}h3{font-size:15px;margin:16px 0 8px}
@@ -76,7 +87,7 @@ td select{min-width:150px;padding:6px 8px}
 .login .panel{padding:28px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:30;max-width:90vw}
 /* icon + tổng quan */
-.ts{display:none}
+.ts{display:none}.backhome{display:none}
 @media (max-width:700px){body.side nav.tabs .tl{display:none}body.side nav.tabs .ts{display:inline}}
 .ic{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
 nav.tabs button{display:flex;gap:6px;align-items:center}
@@ -126,8 +137,9 @@ nav.tabs button{display:flex;gap:6px;align-items:center}
 </style>
 </head>
 <body>
-<header class="top"><div class="in"><div><b>ESG Farm · Nhập liệu</b><small id="who">Farm Bạc Liêu</small></div><button id="logout" hidden>Đăng xuất</button></div></header>
-<nav class="tabs" id="tabs" hidden><div class="in"></div></nav>
+<header class="top"><div class="in"><div><b class="who-brand"><span class="lg">ShrimpVet </span>ESG Farm · Nội bộ</b><small id="who">Farm Bạc Liêu</small></div>
+  <div class="acts-h"><a class="home" href="../" title="Về trang giới thiệu"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Trang chủ</span></a><button id="logout" hidden>Đăng xuất</button></div></div></header>
+<nav class="tabs" id="tabs" hidden><a class="brandbox" href="../"><b>ShrimpVet ESG Farm</b><span>Khu vực nội bộ</span></a><div class="in"></div><a class="backhome" href="../"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>Về trang giới thiệu</a></nav>
 <main class="wrap" id="main"><p class="mut">Đang tải…</p></main>
 <div class="toast" id="toast" hidden></div>
 
