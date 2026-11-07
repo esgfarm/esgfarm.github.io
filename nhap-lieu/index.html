@@ -92,7 +92,8 @@ const WATER = [
   {k:"tan", n:"TAN (mg/L)", bad:v=>v>5},
   {k:"kh", n:"Kiềm (mg/L)", bad:v=>v<89},
   {k:"temp", n:"Nhiệt độ (°C)"},
-  {k:"sal", n:"Độ mặn (‰)"}
+  {k:"sal", n:"Độ mặn (‰)"},
+  {k:"abw", n:"Trọng lượng TB (g/con)"}
 ];
 const FIN_CATS = { chi:["Thức ăn","Con giống","Vi sinh / khoáng / hóa chất","Điện","Nhiên liệu","Lương","Sửa chữa, vật tư","Khác"], thu:["Bán tôm","Khác"] };
 const HARV_TYPES = { tia:"Thu tỉa", san:"San tôm", het:"Thu toàn bộ" };
@@ -134,7 +135,7 @@ const can = {
   cycle: () => ["admin","kythuat"].includes(role()),
   admin: () => role()==="admin"
 };
-const userName = e => e ? (S.users[e] && S.users[e].name) || e : "–";
+const userName = e => e === "app-cu" ? "App cũ" : e ? (S.users[e] && S.users[e].name) || e : "–";
 const itemName = id => S.items[id] ? S.items[id].name : "(đã xoá)";
 const itemUnit = id => S.items[id] ? (S.items[id].unit || "") : "";
 const sortedItems = grp => Object.entries(S.items).filter(([,v]) => !grp || (grp==="feed" ? v.group==="thuc_an" : v.group!=="thuc_an")).sort((a,b)=>a[1].name.localeCompare(b[1].name,"vi"));
@@ -543,8 +544,97 @@ function vQl(){
     <td><button class="btn s ${u.active===false?"":"d"}" data-ulock="${esc(e)}">${u.active===false?"Mở khoá":"Khoá"}</button></td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có nhân viên.</p>`}
   <div class="panel"><h3 style="margin-top:0">Sao lưu</h3>
     <p class="small mut">Tải toàn bộ số liệu (nhật ký ao, kho, thu–chi, vụ nuôi, thu hoạch) về máy dạng Excel.</p>
-    <button class="btn" data-export>Xuất dữ liệu ra Excel</button></div>`;
+    <button class="btn" data-export>Xuất dữ liệu ra Excel</button></div>
+  <div class="panel"><h3 style="margin-top:0">Chép dữ liệu từ app “Nhật ký ao nuôi”</h3>
+    <p class="small mut">Chọn file <b>du-lieu-app-cu.json</b>. Trang sẽ hiện bản xem trước, chưa ghi gì cho đến khi anh bấm “Chép dữ liệu”. Ngày nào trang mới đã có số liệu thì giữ nguyên, không ghi đè.</p>
+    <input type="file" id="impfile" accept=".json,application/json">
+    <div id="imprev">${UI.impHtml || ""}</div></div>`;
 }
+
+/* ===== Chép dữ liệu app cũ ===== */
+function impPlan(D){
+  const P = { keyToId:{}, newItems:[], priceUpd:[], base:[], cyc:[], swap:[], setPond:[] };
+  const byName = {}; Object.entries(S.items).forEach(([id,v]) => byName[v.name.trim().toLowerCase()] = id);
+  for (const it of D.items) {
+    const id = byName[it.name.toLowerCase()] || byName[it.old.toLowerCase()] || ("old_" + it.key);
+    P.keyToId[it.key] = id;
+    if (!S.items[id]) P.newItems.push({ id, it });
+    else if (!S.items[id].price && it.price) P.priceUpd.push({ id, price:it.price });
+    if (it.oldStock != null) {
+      const manual = S.moves.some(m => m.item === id && m.src !== "app-cu");
+      const done = S.moves.some(m => m.id === "base_" + id);
+      P.base.push({ id, it, cur: S.items[id] ? (S.items[id].qty || 0) : 0, act: done ? "done" : manual ? "skip" : "add" });
+    }
+  }
+  for (const c of D.cycles) {
+    if (c.status !== "active") continue;
+    const cur = S.ponds[c.pond] && S.ponds[c.pond].cycleId;
+    if (cur === c.id) continue;
+    if (cur && S.cycles[cur]) P.swap.push({ pond:c.pond, from:cur, fromDate:S.cycles[cur].stockDate, to:c.id, toDate:c.stockDate });
+    else P.setPond.push({ pond:c.pond, to:c.id });
+  }
+  return P;
+}
+document.addEventListener("change", async e => {
+  if (e.target.id !== "impfile" || !e.target.files[0]) return;
+  try {
+    const D = JSON.parse(await e.target.files[0].text());
+    if (D.version !== 1 || !Array.isArray(D.logs)) throw new Error("File không đúng định dạng.");
+    const ex = await getDocs(query(collection(db,"logs"), where("date", "<=", D.cutoff)));
+    const have = new Set(ex.docs.map(d => d.id));
+    const P = impPlan(D);
+    const newLogs = D.logs.filter(l => !have.has(l.pond + "_" + l.date));
+    UI.imp = { D, P, newLogs };
+    const A = { add:"Chuyển tồn sang", skip:"Bỏ qua (thủ kho đã kiểm kê/nhập)", done:"Đã chuyển trước đó" };
+    UI.impHtml = `<div class="banner okb" style="margin-top:12px">Dữ liệu app cũ đến hết <b>${vnDate(D.cutoff)}</b>:
+      ${D.cycles.length} vụ nuôi (${D.cycles.filter(c=>c.status==="active").length} đang nuôi) ·
+      <b>${newLogs.length}</b> ngày nhập liệu${D.logs.length - newLogs.length ? ` (bỏ qua ${D.logs.length - newLogs.length} ngày đã có)` : ""} ·
+      ${D.harvests.length} lần thu hoạch · ${D.moves.length} phiếu kho · ${D.finance.length} khoản thu–chi · ${P.newItems.length} mặt hàng mới.</div>
+      ${P.swap.length ? `<div class="banner"><b>Vụ nuôi sẽ được thay theo app cũ:</b><br>${P.swap.map(s => `Ao ${s.pond}: vụ thả ${vnDate(s.fromDate)} (nhập hôm nay) → vụ thả ${vnDate(s.toDate)} (app cũ)`).join("<br>")}<br><span class="small">Người phụ trách ao giữ nguyên; số liệu đã nhập trên trang mới được chuyển sang vụ đúng.</span></div>` : ""}
+      ${P.base.length ? `<h3>Tồn kho</h3><div class="tw"><table><tr><th>Hàng</th><th class="r">Tồn app cũ (đến ${vnDate(D.cutoff)})</th><th class="r">Trang mới hiện tại</th><th>Xử lý</th></tr>
+        ${P.base.map(b => `<tr><td>${esc(b.it.name)}</td><td class="r num">${fmt(b.it.oldStock)}</td><td class="r num">${fmt(b.cur)}</td><td class="small">${A[b.act]}${b.act==="add" ? ` → ${fmt(b.cur + b.it.oldStock)}` : ""}</td></tr>`).join("")}</table></div>
+        <p class="small mut">“Trang mới hiện tại” là số đã bị trừ do nhân viên nhập từ ${vnDate(addDays(D.cutoff,1))}. Chuyển tồn = cộng thêm tồn app cũ.</p>` : ""}
+      <div class="acts"><button class="btn p" data-imprun>Chép dữ liệu</button></div>`;
+  } catch (er) { console.error(er); UI.impHtml = `<div class="banner err">Không đọc được file: ${esc(er.message || er.code)}</div>`; }
+  rerender();
+});
+document.addEventListener("click", async e => {
+  const btn = e.target.closest("[data-imprun]"); if (!btn || !UI.imp) return;
+  const { D, P, newLogs } = UI.imp; const K = k => P.keyToId[k];
+  btn.disabled = true; btn.textContent = "Đang chép…";
+  const ops = [];
+  P.newItems.forEach(({ id, it }) => ops.push(b => b.set(doc(db,"stockItems",id), { name:it.name, group:it.group, unit:it.unit, qty:0, price:it.price || null })));
+  P.priceUpd.forEach(({ id, price }) => ops.push(b => b.update(doc(db,"stockItems",id), { price })));
+  D.cycles.forEach(c => ops.push(b => b.set(doc(db,"cycles",c.id), { pond:c.pond, stockDate:c.stockDate, stockCount:c.stockCount, status:c.status, endDate:c.endDate || null, note:c.note || "", seedPrice:c.seedPrice || null, by:"app-cu" }, { merge:true })));
+  newLogs.forEach(l => ops.push(b => b.set(doc(db,"logs",l.pond + "_" + l.date), { pond:l.pond, date:l.date, cycleId:l.cycleId,
+    feeds:l.feeds.map(f => ({ item:K(f.key), kg:f.kg })), treats:l.treats.map(t => ({ item:K(t.key), qty:t.qty })), water:l.water, note:l.note, feedTotal:l.feedTotal, by:"app-cu", src:"app-cu", at:serverTimestamp() })));
+  D.harvests.forEach(h => ops.push(b => b.set(doc(db,"harvests",h.id), { pond:h.pond, cycleId:h.cycleId, date:h.date, type:h.type, kg:h.kg, size:h.size ?? null, price:h.price ?? null, note:h.note, by:"app-cu", at:serverTimestamp() })));
+  D.finance.forEach(f => ops.push(b => b.set(doc(db,"finance",f.id), { type:f.type, date:f.date, cat:f.cat, pond:f.pond, amount:f.amount, note:f.note, by:"app-cu", at:serverTimestamp() })));
+  D.moves.forEach(m => ops.push(b => b.set(doc(db,"stockMoves",m.id), { type:m.type, item:K(m.key), qty:m.qty, date:m.date, price:m.price ?? null, note:m.note, by:S.email, src:"app-cu", at:serverTimestamp() })));
+  const last = [];
+  P.base.filter(x => x.act === "add").forEach(x => {
+    last.push(b => b.set(doc(db,"stockMoves","base_" + x.id), { type:"adj", item:x.id, qty:x.it.oldStock, date:D.cutoff, price:null, note:`Tồn chuyển từ app cũ đến hết ${vnDate(D.cutoff)}`, by:S.email, src:"app-cu", at:serverTimestamp() }));
+    last.push(b => b.update(doc(db,"stockItems",x.id), { qty:increment(x.it.oldStock) }));
+  });
+  try {
+    for (const s of P.swap) {
+      const moved = await getDocs(query(collection(db,"logs"), where("cycleId", "==", s.from)));
+      moved.docs.forEach(d => last.push(b => b.update(d.ref, { cycleId:s.to })));
+      S.harv.filter(h => h.cycleId === s.from).forEach(h => last.push(b => b.update(doc(db,"harvests",h.id), { cycleId:s.to })));
+      last.push(b => b.delete(doc(db,"cycles",s.from)));
+      last.push(b => b.update(doc(db,"ponds",s.pond), { cycleId:s.to }));
+    }
+    P.setPond.forEach(s => last.push(b => S.ponds[s.pond] ? b.update(doc(db,"ponds",s.pond), { cycleId:s.to }) : b.set(doc(db,"ponds",s.pond), { zone:s.pond[0], area:defaultArea(s.pond), owner:null, cycleId:s.to })));
+    // Ghi dữ liệu chính theo lô; phần đổi vụ + cộng tồn ghi chung một lô cuối (cùng thành công hoặc cùng không)
+    for (let i = 0; i < ops.length; i += 400) {
+      const b = writeBatch(db); ops.slice(i, i + 400).forEach(f => f(b)); await b.commit();
+      btn.textContent = `Đang chép… ${Math.min(i + 400, ops.length)}/${ops.length}`;
+    }
+    if (last.length) { const b = writeBatch(db); last.forEach(f => f(b)); await b.commit(); }
+    UI.imp = null; UI.impHtml = `<div class="banner okb" style="margin-top:12px">✓ Đã chép xong: ${newLogs.length} ngày nhập liệu, ${D.cycles.length} vụ, ${D.harvests.length} thu hoạch, ${D.moves.length} phiếu kho, ${D.finance.length} khoản thu–chi.</div>`;
+    toast("Đã chép dữ liệu app cũ."); rerender();
+  } catch (er) { console.error(er); UI.imp = null; UI.impHtml = `<div class="banner err" style="margin-top:12px">Chép bị lỗi giữa chừng (${esc(er.code || er.message)}). Anh chọn lại file để chép tiếp, phần đã chép sẽ không bị trùng.</div>`; rerender(); }
+});
 document.addEventListener("change", async e => {
   const r = e.target.closest("[data-urole]"); if (!r) return;
   try { await updateDoc(doc(db,"users",r.dataset.urole), { role:r.value }); toast("Đã đổi vai trò."); } catch (er) { toast("Không lưu được."); }
