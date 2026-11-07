@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESG Farm – Nhập liệu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#f1f5fa;--sf:#fff;--sunk:#e8eef6;--ink:#13233a;--mut:#5a6b82;--line:#d8e1ec;--ac:#1f6fd1;--acs:#dde9f9;--side:#0e2a4a;
+--ok:#23804f;--oks:#dcf3e5;--warn:#a96a06;--warns:#fbefd6;--bad:#c03a26;--bads:#fbe3de;--r:10px;
+font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
+header.top{background:var(--side);color:#fff;position:sticky;top:0;z-index:5}
+header .in{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+header b{font-size:17px}header small{display:block;color:#c5d3e6;font-size:12.5px}
+header button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;padding:7px 12px;font:inherit;font-size:13px;cursor:pointer}
+nav.tabs{background:var(--sf);border-bottom:1px solid var(--line);position:sticky;top:56px;z-index:4}
+nav.tabs .in{max-width:1100px;margin:0 auto;padding:0 10px;display:flex;gap:2px;overflow-x:auto}
+nav.tabs button{flex:0 0 auto;border:0;background:none;font:inherit;font-weight:600;font-size:14px;color:var(--mut);padding:11px 12px;border-bottom:3px solid transparent;cursor:pointer}
+nav.tabs button.on{color:var(--ac);border-bottom-color:var(--ac)}
+.wrap{max-width:1100px;margin:0 auto;padding:14px 16px 60px}
+h2{font-size:19px;margin:6px 0 10px}h3{font-size:15px;margin:16px 0 8px}
+.panel{background:var(--sf);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+.mut{color:var(--mut)}.small{font-size:12.5px}.bad{color:var(--bad)}.ok{color:var(--ok)}.warn{color:var(--warn)}
+.num{font-variant-numeric:tabular-nums}
+.banner{padding:10px 12px;border-radius:var(--r);background:var(--warns);margin:10px 0}
+.banner.err{background:var(--bads)}.banner.okb{background:var(--oks)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.pond{background:var(--sf);border:1px solid var(--line);border-left:6px solid var(--line);border-radius:var(--r);padding:10px;text-align:left;font:inherit;color:inherit;cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.pond:hover{border-color:var(--ac)}.pond b{font-size:19px}
+.pond.on{border-left-color:var(--ok)}.pond.alert{border-left-color:var(--bad);background:var(--bads)}.pond.todo{border-left-color:var(--warn)}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--sunk);color:var(--mut)}
+.chip.g{background:var(--oks);color:var(--ok)}.chip.b{background:var(--acs);color:var(--ac)}.chip.r{background:var(--bads);color:var(--bad)}.chip.y{background:var(--warns);color:var(--warn)}
+label{display:block;font-size:13px;font-weight:600;color:var(--mut);margin-bottom:4px}
+input,select,textarea{font:inherit;font-size:15px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--sf);color:var(--ink);width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--ac);outline-offset:1px}
+textarea{min-height:64px;resize:vertical}
+.f2{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 110px 40px;gap:8px;margin-bottom:8px;align-items:center}
+.btn{font:inherit;font-weight:600;font-size:14px;border:1px solid var(--line);background:var(--sf);color:var(--ink);border-radius:8px;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.btn.p{background:var(--ac);border-color:var(--ac);color:#fff}.btn.d{color:var(--bad)}.btn.s{padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.x{border:0;background:var(--sunk);color:var(--mut);border-radius:8px;height:40px;font-size:18px;cursor:pointer}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--sf)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+th{background:var(--sunk);font-size:12.5px;color:var(--mut)}td.r,th.r{text-align:right}
+tr:last-child td{border-bottom:0}
+td select{min-width:150px;padding:6px 8px}
+.kp{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:10px 0}
+.kp div{background:var(--sf);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kp b{display:block;font-size:20px}.kp span{font-size:12.5px;color:var(--mut)}
+.login{max-width:420px;margin:60px auto;text-align:center}
+.login .panel{padding:28px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:30;max-width:90vw}
+.back{border:0;background:none;color:var(--ac);font:inherit;font-weight:600;cursor:pointer;padding:0;margin-bottom:6px}
+@media (max-width:560px){.row{grid-template-columns:minmax(0,1fr) 90px 40px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><div><b>ESG Farm · Nhập liệu</b><small id="who">Farm Bạc Liêu</small></div><button id="logout" hidden>Đăng xuất</button></div></header>
+<nav class="tabs" id="tabs" hidden><div class="in"></div></nav>
+<main class="wrap" id="main"><p class="mut">Đang tải…</p></main>
+<div class="toast" id="toast" hidden></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc, getDocs, query, where, orderBy, limit, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ===== Cấu hình ===== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCnIDii7alui2UuHt4zM3rLcJc7FVkSFFs",
+  authDomain: "esgfarm-c6ba0.firebaseapp.com",
+  projectId: "esgfarm-c6ba0",
+  storageBucket: "esgfarm-c6ba0.firebasestorage.app",
+  messagingSenderId: "704614035514",
+  appId: "1:704614035514:web:19f29c41eab3e40c768503"
+};
+// Gmail của Quản lý (luôn có toàn quyền). Phải trùng với email trong firestore.rules.
+const OWNER_EMAIL = "hungpham.shrimpvet@gmail.com";
+
+const ROLES = { admin:"Quản lý", kythuat:"Kỹ thuật", ao:"Phụ trách ao", kho:"Thủ kho", ketoan:"Kế toán" };
+const GROUPS = { thuc_an:"Thức ăn", vi_sinh:"Vi sinh", khoang:"Khoáng", hoa_chat:"Hóa chất / thuốc", khac:"Khác" };
+const WATER = [
+  {k:"ph", n:"pH", bad:v=>v<7.5},
+  {k:"do", n:"DO (mg/L)", bad:v=>v<5},
+  {k:"no2", n:"NO2 (mg/L)", bad:v=>v>2},
+  {k:"tan", n:"TAN (mg/L)", bad:v=>v>5},
+  {k:"kh", n:"Kiềm (mg/L)", bad:v=>v<89},
+  {k:"temp", n:"Nhiệt độ (°C)"},
+  {k:"sal", n:"Độ mặn (‰)"}
+];
+const FIN_CATS = { chi:["Thức ăn","Con giống","Vi sinh / khoáng / hóa chất","Điện","Nhiên liệu","Lương","Sửa chữa, vật tư","Khác"], thu:["Bán tôm","Khác"] };
+const HARV_TYPES = { tia:"Thu tỉa", san:"San tôm", het:"Thu toàn bộ" };
+const LOG_WINDOW_DAYS = 45;
+const LOW_FEED_KG = 200;
+
+const app = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(app);
+const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+
+/* ===== Tiện ích ===== */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nf = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 });
+const nf0 = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 });
+const fmt = v => v == null || isNaN(v) ? "–" : nf.format(v);
+const money = v => v == null || isNaN(v) ? "–" : nf0.format(v) + " đ";
+const num = v => { if (v == null) return NaN; const s = String(v).trim().replace(/\s/g, "").replace(",", "."); return s === "" ? NaN : Number(s); };
+const today = () => new Date().toLocaleDateString("sv");
+const addDays = (d, n) => { const x = new Date(d + "T00:00:00"); x.setDate(x.getDate() + n); return x.toLocaleDateString("sv"); };
+const vnDate = d => d ? d.split("-").reverse().join("/") : "–";
+const daysBetween = (a, b) => Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000);
+const POND_IDS = ["A","B","C","D"].flatMap(z => [1,2,3,4,5,6].map(i => z + i));
+const defaultArea = p => p === "D6" ? 1520 : /^[AB]/.test(p) ? 2025 : 1600;
+function toast(m){ const t=$("#toast"); t.textContent=m; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,3200); }
+
+/* ===== Trạng thái ===== */
+const S = { user:null, email:"", me:null, users:{}, ponds:{}, cycles:{}, logs:{}, items:{}, moves:[], fin:[], harv:[], started:false, err:"" };
+const UI = { tab:null, pond:null, date:today(), startPond:null, finMonth:today().slice(0,7) };
+let unsubs = [];
+const isOwner = () => OWNER_EMAIL && S.email === OWNER_EMAIL.toLowerCase();
+const role = () => isOwner() ? "admin" : (S.me && S.me.active !== false ? S.me.role : "");
+const can = {
+  allPonds: () => ["admin","kythuat"].includes(role()),
+  pond: p => can.allPonds() || (role()==="ao" && S.ponds[p] && S.ponds[p].owner === S.email),
+  kho: () => ["admin","kho"].includes(role()),
+  fin: () => ["admin","ketoan"].includes(role()),
+  cycle: () => ["admin","kythuat"].includes(role()),
+  admin: () => role()==="admin"
+};
+const userName = e => e ? (S.users[e] && S.users[e].name) || e : "–";
+const itemName = id => S.items[id] ? S.items[id].name : "(đã xoá)";
+const itemUnit = id => S.items[id] ? (S.items[id].unit || "") : "";
+const sortedItems = grp => Object.entries(S.items).filter(([,v]) => !grp || (grp==="feed" ? v.group==="thuc_an" : v.group!=="thuc_an")).sort((a,b)=>a[1].name.localeCompare(b[1].name,"vi"));
+
+/* ===== Đăng nhập ===== */
+$("#logout").onclick = () => signOut(auth);
+onAuthStateChanged(auth, u => {
+  unsubs.forEach(f => f()); unsubs = [];
+  Object.assign(S, { user:u, me:null, started:false, err:"", users:{}, ponds:{}, cycles:{}, logs:{}, items:{}, moves:[], fin:[], harv:[] });
+  $("#logout").hidden = !u;
+  if (!u) { renderLogin(); return; }
+  S.email = (u.email || "").toLowerCase();
+  $("#who").textContent = u.displayName ? u.displayName + " · " + S.email : S.email;
+  if (isOwner()) { S.me = { role:"admin", name:u.displayName || "Quản lý", active:true }; startData(); }
+  unsubs.push(onSnapshot(doc(db, "users", S.email), s => {
+    if (isOwner()) { if (s.exists()) S.me = Object.assign({}, s.data(), { role:"admin", active:true }); }
+    else { S.me = s.exists() ? s.data() : null; if (role() && !S.started) startData(); }
+    render();
+  }, e => { console.warn(e); S.me = isOwner() ? S.me : null; render(); }));
+  render();
+});
+
+function renderLogin(){
+  $("#tabs").hidden = true;
+  $("#main").innerHTML = `<div class="login"><div class="panel">
+    <h2>Đăng nhập nhập liệu</h2>
+    <p class="mut">Dùng Gmail đã được anh Hùng cấp quyền.</p>
+    <button class="btn p" id="gsign" style="width:100%;padding:12px">Đăng nhập bằng Google</button>
+    <p class="small mut" style="margin-top:14px">Trang giới thiệu trang trại: <a href="../">esgfarm.github.io</a></p>
+  </div></div>`;
+  $("#gsign").onclick = async () => {
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    catch (e) { console.error(e); toast(e.code === "auth/unauthorized-domain" ? "Tên miền chưa được thêm vào Firebase (Authorized domains)." : e.code === "auth/popup-blocked" ? "Trình duyệt chặn cửa sổ đăng nhập, anh cho phép popup rồi thử lại." : "Đăng nhập không được: " + (e.code || e.message)); }
+  };
+}
+
+/* ===== Tải dữ liệu ===== */
+function listen(q, fn){ unsubs.push(onSnapshot(q, fn, e => { console.warn(e); if (e.code === "permission-denied") { S.err = "Không có quyền đọc một phần dữ liệu. Kiểm tra lại luật bảo mật (rules)."; render(); } })); }
+function startData(){
+  S.started = true;
+  listen(collection(db,"users"), s => { S.users = {}; s.forEach(d => S.users[d.id] = d.data()); render(); });
+  listen(collection(db,"ponds"), s => { S.ponds = {}; s.forEach(d => S.ponds[d.id] = d.data()); render(); });
+  listen(collection(db,"cycles"), s => { S.cycles = {}; s.forEach(d => S.cycles[d.id] = Object.assign({ id:d.id }, d.data())); render(); });
+  listen(collection(db,"stockItems"), s => { S.items = {}; s.forEach(d => S.items[d.id] = d.data()); render(); });
+  listen(query(collection(db,"logs"), where("date", ">=", addDays(today(), -LOG_WINDOW_DAYS))), s => { S.logs = {}; s.forEach(d => S.logs[d.id] = d.data()); render(); });
+  listen(collection(db,"harvests"), s => { S.harv = s.docs.map(d => Object.assign({ id:d.id }, d.data())); render(); });
+  listen(query(collection(db,"stockMoves"), orderBy("date","desc"), limit(300)), s => { S.moves = s.docs.map(d => Object.assign({ id:d.id }, d.data())); render(); });
+  if (can.fin()) listen(collection(db,"finance"), s => { S.fin = s.docs.map(d => Object.assign({ id:d.id }, d.data())); render(); });
+}
+
+/* ===== Khung giao diện ===== */
+function tabsFor(){
+  const r = role(), t = [];
+  if (["admin","kythuat","ao"].includes(r)) t.push(["ao","Ao nuôi"]);
+  if (["admin","kythuat"].includes(r)) t.push(["vu","Vụ nuôi & phân công"]);
+  if (["admin","kho","kythuat"].includes(r)) t.push(["kho","Kho"]);
+  if (can.fin()) t.push(["fin","Thu – chi"]);
+  if (r === "admin") t.push(["ql","Quản lý"]);
+  return t;
+}
+// Khi đang gõ dở một biểu mẫu, dữ liệu mới từ người khác không vẽ lại trang (tránh mất chữ đang nhập).
+UI.dirty = false;
+document.addEventListener("input", e => { if (e.target.closest("#main") && e.target.matches("input,textarea")) UI.dirty = true; });
+function rerender(){ UI.dirty = false; render(); }
+
+function render(){
+  if (!S.user) return;
+  if (UI.dirty) return;
+  if (!role()) {
+    $("#tabs").hidden = true;
+    $("#main").innerHTML = `<div class="login"><div class="panel"><h2>Chưa được cấp quyền</h2>
+      <p>Email <b>${esc(S.email)}</b> chưa có trong danh sách nhân viên${S.me && S.me.active===false ? " (tài khoản đang bị khoá)" : ""}.</p>
+      <p class="mut">Anh nhờ anh Hùng thêm email này ở mục Quản lý, rồi tải lại trang.</p></div></div>`;
+    return;
+  }
+  const tabs = tabsFor();
+  if (!tabs.some(t => t[0] === UI.tab)) UI.tab = tabs[0][0];
+  const nav = $("#tabs"); nav.hidden = false;
+  nav.querySelector(".in").innerHTML = tabs.map(([k,n]) => `<button data-tab="${k}" class="${k===UI.tab?"on":""}">${n}</button>`).join("");
+  let h = `<div class="small mut">Vai trò: <b>${ROLES[role()]}</b></div>`;
+  if (S.err) h += `<div class="banner err">${esc(S.err)}</div>`;
+  h += ({ ao:vAo, vu:vVu, kho:vKho, fin:vFin, ql:vQl })[UI.tab]();
+  $("#main").innerHTML = h;
+}
+$("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.tab = b.dataset.tab; UI.pond = null; rerender(); window.scrollTo(0,0); });
+
+/* ===== Ao nuôi ===== */
+function activeCycle(p){ const id = S.ponds[p] && S.ponds[p].cycleId; return id && S.cycles[id] ? S.cycles[id] : null; }
+function lastWater(p){ const ls = Object.values(S.logs).filter(l => l.pond===p && l.water && Object.keys(l.water).length).sort((a,b)=>b.date.localeCompare(a.date)); return ls[0] || null; }
+function waterAlerts(w){ return WATER.filter(f => f.bad && w && w[f.k] != null && f.bad(w[f.k])).map(f => f.n.split(" ")[0]); }
+
+function vAo(){
+  if (UI.pond) return vPondForm(UI.pond);
+  const ids = POND_IDS.concat(Object.keys(S.ponds).filter(p => !POND_IDS.includes(p)).sort());
+  const mine = ids.filter(p => S.ponds[p] && (can.allPonds() || S.ponds[p].owner === S.email));
+  if (!Object.keys(S.ponds).length) return `<div class="banner">Chưa có danh sách ao. ${can.admin() ? "Anh vào tab <b>Quản lý</b> bấm “Tạo 24 ao”." : "Nhờ anh Hùng tạo danh sách ao."}</div>`;
+  if (!mine.length) return `<div class="banner">Anh/chị chưa được giao ao nào. Kỹ thuật sẽ phân ao đầu vụ.</div>`;
+  const t = today();
+  const card = p => {
+    const cy = activeCycle(p), lw = lastWater(p), al = lw ? waterAlerts(lw.water) : [];
+    const done = !!S.logs[p + "_" + t];
+    const cls = al.length ? "alert" : cy && !done ? "todo" : cy ? "on" : "";
+    return `<button class="pond ${cls}" data-pond="${p}">
+      <span style="display:flex;justify-content:space-between;align-items:center"><b>${esc(p)}</b>${cy ? `<span class="chip g">DOC ${daysBetween(cy.stockDate, t)}</span>` : `<span class="chip">Trống</span>`}</span>
+      <span class="small mut">${esc(userName(S.ponds[p].owner))}</span>
+      <span class="small">${cy ? (done ? `<span class="ok">✓ Đã nhập hôm nay</span>` : `<span class="warn">Chưa nhập hôm nay</span>`) : "&nbsp;"}</span>
+      ${al.length ? `<span class="small bad">⚠ ${esc(al.join(", "))}</span>` : ""}
+    </button>`;
+  };
+  return `<h2>${can.allPonds() ? "Tất cả ao" : "Ao anh/chị phụ trách"}</h2>
+    <div class="grid">${mine.map(card).join("")}</div>
+    <p class="small mut">Bấm vào ao để nhập lượng ăn, xử lý, chỉ số môi trường.</p>`;
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-pond]"); if (!b) return; UI.pond = b.dataset.pond; UI.date = today(); rerender(); window.scrollTo(0,0); });
+
+function itemOptions(grp, sel){
+  return `<option value="">– chọn –</option>` + sortedItems(grp).map(([id,v]) => `<option value="${id}" ${id===sel?"selected":""}>${esc(v.name)}${v.unit ? " ("+esc(v.unit)+")" : ""}</option>`).join("");
+}
+function feedRow(it, kg){ return `<div class="row frow"><select name="fitem">${itemOptions("feed", it)}</select><input name="fkg" inputmode="decimal" placeholder="kg" value="${kg ?? ""}"><button type="button" class="x" data-rm>×</button></div>`; }
+function trRow(it, q){ return `<div class="row trow"><select name="titem">${itemOptions("other", it)}</select><input name="tqty" inputmode="decimal" placeholder="lượng" value="${q ?? ""}"><button type="button" class="x" data-rm>×</button></div>`; }
+
+function vPondForm(p){
+  const cy = activeCycle(p), edit = can.pond(p);
+  const log = S.logs[p + "_" + UI.date] || {};
+  const feeds = (log.feeds && log.feeds.length) ? log.feeds : [{}];
+  const treats = (log.treats && log.treats.length) ? log.treats : [{}];
+  const w = log.water || {};
+  const hist = Object.values(S.logs).filter(l => l.pond===p).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,14);
+  const ro = edit ? "" : "disabled";
+  return `<button class="back" data-back>← Danh sách ao</button>
+  <h2>Ao ${esc(p)} ${cy ? `<span class="chip g">Đang nuôi · DOC ${daysBetween(cy.stockDate, today())}</span>` : `<span class="chip">Chưa có vụ</span>`}</h2>
+  <div class="small mut">Phụ trách: ${esc(userName(S.ponds[p] && S.ponds[p].owner))}${cy ? ` · Thả ${vnDate(cy.stockDate)} · ${fmt(cy.stockCount)} con` : ""}</div>
+  ${!edit ? `<div class="banner">Anh/chị chỉ được xem ao này.</div>` : ""}
+  ${!cy && edit ? `<div class="banner">Ao chưa bắt đầu vụ. Vẫn nhập được, nhưng nên nhờ Kỹ thuật “Bắt đầu vụ” trước.</div>` : ""}
+  <div class="panel">
+    <div class="f2"><div><label>Ngày</label><input type="date" id="ldate" value="${UI.date}" max="${today()}"></div></div>
+    ${log.by ? `<p class="small mut">Đã có số liệu ngày này (người nhập: ${esc(userName(log.by))}). Sửa rồi bấm Lưu để cập nhật.</p>` : ""}
+    <h3>Lượng ăn (kg)</h3>
+    <div id="frows">${feeds.map(f => feedRow(f.item, f.kg)).join("")}</div>
+    ${edit ? `<button class="btn s" data-add="feed">+ Thêm loại thức ăn</button>` : ""}
+    <h3>Xử lý (vi sinh, khoáng, hóa chất)</h3>
+    <div id="trows">${treats.map(t => trRow(t.item, t.qty)).join("")}</div>
+    ${edit ? `<button class="btn s" data-add="tr">+ Thêm sản phẩm</button>` : ""}
+    <h3>Chỉ số môi trường</h3>
+    <div class="f2">${WATER.map(f => `<div><label>${f.n}</label><input name="w_${f.k}" inputmode="decimal" value="${w[f.k] ?? ""}" ${ro}></div>`).join("")}</div>
+    <h3>Ghi chú</h3>
+    <textarea id="lnote" placeholder="Tình trạng tôm, bổ sung vitamin C, tỏi…" ${ro}>${esc(log.note || "")}</textarea>
+    ${edit ? `<div class="acts"><button class="btn p" data-save-log>Lưu số liệu</button></div>
+    <p class="small mut">Lưu xong, kho tự trừ lượng thức ăn và sản phẩm xử lý đã chọn.</p>` : ""}
+  </div>
+  <h3>14 lần nhập gần nhất</h3>
+  ${hist.length ? `<div class="tw"><table><tr><th>Ngày</th><th class="r">Thức ăn (kg)</th><th>Xử lý</th>${WATER.slice(0,5).map(f=>`<th class="r">${f.n.split(" ")[0]}</th>`).join("")}<th>Người nhập</th></tr>
+  ${hist.map(l => `<tr><td><a href="#" data-day="${l.date}">${vnDate(l.date)}</a></td><td class="r num">${fmt((l.feeds||[]).reduce((a,f)=>a+(f.kg||0),0))}</td>
+    <td class="small">${esc((l.treats||[]).map(t=>itemName(t.item)).join(", ")) || "–"}</td>
+    ${WATER.slice(0,5).map(f => { const v = l.water && l.water[f.k]; return `<td class="r num ${v!=null&&f.bad&&f.bad(v)?"bad":""}">${v!=null?fmt(v):"–"}</td>`; }).join("")}
+    <td class="small mut">${esc(userName(l.by))}</td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có số liệu.</p>`}`;
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-back]")) { UI.pond = null; rerender(); return; }
+  const add = e.target.closest("[data-add]");
+  if (add) { const wrap = add.dataset.add === "feed" ? $("#frows") : $("#trows"); wrap.insertAdjacentHTML("beforeend", add.dataset.add === "feed" ? feedRow() : trRow()); return; }
+  const rm = e.target.closest("[data-rm]"); if (rm) { rm.closest(".row").remove(); return; }
+  const dy = e.target.closest("[data-day]"); if (dy) { e.preventDefault(); UI.date = dy.dataset.day; rerender(); window.scrollTo(0,0); return; }
+  if (e.target.closest("[data-save-log]")) saveLog(e.target.closest("[data-save-log]"));
+});
+document.addEventListener("change", e => { if (e.target.id === "ldate") { UI.date = e.target.value || today(); rerender(); } });
+
+async function saveLog(btn){
+  const p = UI.pond, d = $("#ldate").value;
+  if (!d) return toast("Chưa chọn ngày.");
+  if (d > today()) return toast("Không nhập cho ngày tương lai.");
+  const feeds = [], treats = [];
+  for (const r of $$("#frows .row")) { const it = r.querySelector("select").value, v = num(r.querySelector("input").value);
+    if (!it && isNaN(v)) continue; if (!it || isNaN(v) || v < 0) return toast("Dòng thức ăn chưa đủ loại hoặc số kg."); feeds.push({ item:it, kg:v }); }
+  for (const r of $$("#trows .row")) { const it = r.querySelector("select").value, v = num(r.querySelector("input").value);
+    if (!it && isNaN(v)) continue; if (!it || isNaN(v) || v < 0) return toast("Dòng xử lý chưa đủ sản phẩm hoặc lượng."); treats.push({ item:it, qty:v }); }
+  const water = {};
+  for (const f of WATER) { const raw = $(`[name=w_${f.k}]`).value; if (raw.trim() === "") continue; const v = num(raw); if (isNaN(v)) return toast(`${f.n} không phải là số.`); water[f.k] = v; }
+  const note = $("#lnote").value.trim();
+  if (!feeds.length && !treats.length && !Object.keys(water).length && !note) return toast("Chưa có số liệu nào để lưu.");
+  btn.disabled = true;
+  try {
+    const ref = doc(db, "logs", p + "_" + d);
+    const oldSnap = await getDoc(ref); const old = oldSnap.exists() ? oldSnap.data() : {};
+    const delta = {};
+    (old.feeds||[]).forEach(f => delta[f.item] = (delta[f.item]||0) - (f.kg||0));
+    (old.treats||[]).forEach(t => delta[t.item] = (delta[t.item]||0) - (t.qty||0));
+    feeds.forEach(f => delta[f.item] = (delta[f.item]||0) + f.kg);
+    treats.forEach(t => delta[t.item] = (delta[t.item]||0) + t.qty);
+    const b = writeBatch(db);
+    b.set(ref, { pond:p, date:d, cycleId:(S.ponds[p] && S.ponds[p].cycleId) || null, feeds, treats, water, note,
+      feedTotal: feeds.reduce((a,f)=>a+f.kg,0), by:S.email, at:serverTimestamp() });
+    Object.entries(delta).forEach(([it, v]) => { if (Math.abs(v) > 1e-9 && S.items[it]) b.update(doc(db,"stockItems",it), { qty: increment(-v) }); });
+    await b.commit();
+    const al = waterAlerts(water);
+    toast(al.length ? `Đã lưu. ⚠ Cảnh báo: ${al.join(", ")}` : "Đã lưu số liệu ao " + p);
+    rerender();
+  } catch (e) { console.error(e); toast(e.code === "permission-denied" ? "Không có quyền nhập cho ao này." : "Lưu không được, kiểm tra mạng rồi thử lại."); }
+  finally { btn.disabled = false; }
+}
+
+/* ===== Vụ nuôi & phân công ===== */
+function vVu(){
+  const t = today();
+  const pondStaff = Object.entries(S.users).filter(([,u]) => u.active !== false && ["ao","kythuat"].includes(u.role));
+  const rows = POND_IDS.filter(p => S.ponds[p]).map(p => {
+    const cy = activeCycle(p), own = S.ponds[p].owner || "";
+    return `<tr><td><b>${p}</b></td>
+      <td><select data-owner="${p}"><option value="">– chưa giao –</option>${pondStaff.map(([e,u]) => `<option value="${esc(e)}" ${e===own?"selected":""}>${esc(u.name||e)}</option>`).join("")}</select></td>
+      <td>${cy ? `<span class="chip g">Đang nuôi</span>` : `<span class="chip">Trống</span>`}</td>
+      <td class="small">${cy ? `Thả ${vnDate(cy.stockDate)} · ${fmt(cy.stockCount)} con · DOC ${daysBetween(cy.stockDate,t)}` : "–"}</td>
+      <td>${cy ? `<button class="btn s d" data-end="${p}">Kết thúc vụ</button>` : `<button class="btn s" data-start="${p}">Bắt đầu vụ</button>`}</td></tr>`;
+  }).join("");
+  const sp = UI.startPond;
+  const hv = S.harv.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
+  const active = POND_IDS.filter(p => activeCycle(p));
+  return `<h2>Vụ nuôi & phân công ao</h2>
+  ${!Object.keys(S.ponds).length ? `<div class="banner">Chưa có danh sách ao.</div>` : ""}
+  ${sp ? `<div class="panel"><h3 style="margin-top:0">Bắt đầu vụ mới – Ao ${esc(sp)}</h3>
+    <div class="f2"><div><label>Ngày thả</label><input type="date" id="cdate" value="${t}"></div>
+    <div><label>Số con thả</label><input id="ccount" inputmode="numeric"></div>
+    <div><label>Nguồn giống / ghi chú</label><input id="cnote"></div></div>
+    <div class="acts"><button class="btn p" data-cstart>Lưu</button><button class="btn" data-ccancel>Huỷ</button></div></div>` : ""}
+  <p class="small mut">Chọn người phụ trách ở cột thứ 2, hệ thống lưu ngay. Người phụ trách chỉ nhập được ao của mình.</p>
+  <div class="tw"><table><tr><th>Ao</th><th>Người phụ trách</th><th>Trạng thái</th><th>Vụ hiện tại</th><th></th></tr>${rows}</table></div>
+  <div class="panel"><h3 style="margin-top:0">Nhập thu hoạch</h3>
+    ${active.length ? `<div class="f2">
+      <div><label>Ao</label><select id="hpond">${active.map(p=>`<option>${p}</option>`).join("")}</select></div>
+      <div><label>Ngày</label><input type="date" id="hdate" value="${t}" max="${t}"></div>
+      <div><label>Hình thức</label><select id="htype">${Object.entries(HARV_TYPES).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></div>
+      <div><label>Sản lượng (kg)</label><input id="hkg" inputmode="decimal"></div>
+      <div><label>Size (con/kg)</label><input id="hsize" inputmode="decimal"></div>
+      <div><label>Ghi chú</label><input id="hnote"></div></div>
+      <div class="acts"><button class="btn p" data-hsave>Lưu thu hoạch</button></div>` : `<p class="mut">Chưa có ao nào đang nuôi.</p>`}
+  </div>
+  <h3>Thu hoạch gần đây</h3>
+  ${hv.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Ao</th><th>Hình thức</th><th class="r">kg</th><th class="r">Size</th><th>Ghi chú</th><th>Người nhập</th><th></th></tr>
+  ${hv.map(h=>`<tr><td>${vnDate(h.date)}</td><td>${esc(h.pond)}</td><td>${HARV_TYPES[h.type]||esc(h.type)}</td><td class="r num">${fmt(h.kg)}</td><td class="r num">${fmt(h.size)}</td><td class="small">${esc(h.note||"")}</td><td class="small mut">${esc(userName(h.by))}</td><td><button class="btn s d" data-hdel="${h.id}">Xoá</button></td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có.</p>`}`;
+}
+document.addEventListener("change", async e => {
+  const o = e.target.closest("[data-owner]"); if (!o) return;
+  try { await updateDoc(doc(db,"ponds",o.dataset.owner), { owner: o.value || null }); toast(`Đã giao ao ${o.dataset.owner}${o.value ? " cho " + userName(o.value) : ""}.`); }
+  catch (er) { console.error(er); toast("Không lưu được phân công."); }
+  rerender();
+});
+document.addEventListener("click", async e => {
+  const st = e.target.closest("[data-start]"); if (st) { UI.startPond = st.dataset.start; rerender(); window.scrollTo(0,0); return; }
+  if (e.target.closest("[data-ccancel]")) { UI.startPond = null; rerender(); return; }
+  if (e.target.closest("[data-cstart]")) {
+    const p = UI.startPond, d = $("#cdate").value, n = num($("#ccount").value);
+    if (!d || isNaN(n) || n <= 0) return toast("Cần ngày thả và số con thả.");
+    const id = p + "_" + d.replaceAll("-", "");
+    const b = writeBatch(db);
+    b.set(doc(db,"cycles",id), { pond:p, stockDate:d, stockCount:n, note:$("#cnote").value.trim(), status:"active", by:S.email, at:serverTimestamp() });
+    b.update(doc(db,"ponds",p), { cycleId:id });
+    try { await b.commit(); UI.startPond = null; toast("Đã bắt đầu vụ ao " + p); rerender(); } catch (er) { console.error(er); toast("Không lưu được."); }
+    return;
+  }
+  const en = e.target.closest("[data-end]");
+  if (en) {
+    const p = en.dataset.end, cy = activeCycle(p); if (!cy) return;
+    if (!confirm(`Kết thúc vụ ao ${p} (thả ${vnDate(cy.stockDate)})? Số liệu vụ vẫn được giữ lại.`)) return;
+    const b = writeBatch(db);
+    b.update(doc(db,"cycles",cy.id), { status:"done", endDate:today() });
+    b.update(doc(db,"ponds",p), { cycleId:null });
+    try { await b.commit(); toast("Đã kết thúc vụ ao " + p); } catch (er) { console.error(er); toast("Không lưu được."); }
+    return;
+  }
+  if (e.target.closest("[data-hsave]")) {
+    const p = $("#hpond").value, d = $("#hdate").value, kg = num($("#hkg").value), size = num($("#hsize").value), type = $("#htype").value;
+    if (!d || isNaN(kg) || kg <= 0) return toast("Cần ngày và sản lượng.");
+    const cy = activeCycle(p);
+    try {
+      await setDoc(doc(collection(db,"harvests")), { pond:p, cycleId:cy ? cy.id : null, date:d, type, kg, size:isNaN(size)?null:size, note:$("#hnote").value.trim(), by:S.email, at:serverTimestamp() });
+      toast("Đã lưu thu hoạch ao " + p);
+      if (type === "het" && cy && confirm(`Thu toàn bộ ao ${p}. Kết thúc vụ luôn?`)) {
+        const b = writeBatch(db); b.update(doc(db,"cycles",cy.id), { status:"done", endDate:d }); b.update(doc(db,"ponds",p), { cycleId:null }); await b.commit();
+      }
+      rerender();
+    } catch (er) { console.error(er); toast("Không lưu được."); }
+    return;
+  }
+  const hd = e.target.closest("[data-hdel]");
+  if (hd && confirm("Xoá dòng thu hoạch này?")) { try { await deleteDoc(doc(db,"harvests",hd.dataset.hdel)); toast("Đã xoá."); } catch (er) { toast("Không xoá được."); } }
+});
+
+/* ===== Kho ===== */
+function vKho(){
+  const edit = can.kho();
+  const items = Object.entries(S.items).sort((a,b) => (a[1].group||"").localeCompare(b[1].group||"") || a[1].name.localeCompare(b[1].name,"vi"));
+  const from = addDays(today(), -6);
+  const used = {};
+  Object.values(S.logs).filter(l => l.date >= from).forEach(l => {
+    (l.feeds||[]).forEach(f => { (used[l.date] ||= {}); used[l.date][f.item] = (used[l.date][f.item]||0) + (f.kg||0); });
+    (l.treats||[]).forEach(t => { (used[l.date] ||= {}); used[l.date][t.item] = (used[l.date][t.item]||0) + (t.qty||0); });
+  });
+  const usedDates = Object.keys(used).sort().reverse();
+  const MV = { in:"Nhập kho", out:"Xuất kho", adj:"Kiểm kê" };
+  return `<h2>Kho</h2>
+  ${!items.length ? `<div class="banner">Chưa có danh mục hàng trong kho.${can.admin() ? " Vào tab Quản lý bấm “Tạo danh mục thức ăn mặc định”, hoặc thêm hàng bên dưới." : ""}</div>` : ""}
+  <div class="tw"><table><tr><th>Hàng</th><th>Nhóm</th><th class="r">Tồn</th><th>ĐVT</th><th class="r">Giá nhập gần nhất</th></tr>
+  ${items.map(([id,v]) => { const low = v.group==="thuc_an" && (v.qty||0) < LOW_FEED_KG; return `<tr><td>${esc(v.name)}</td><td class="small">${GROUPS[v.group]||"–"}</td>
+    <td class="r num ${low||(v.qty||0)<0?"bad":""}"><b>${fmt(v.qty||0)}</b>${low?" ⚠":""}</td><td>${esc(v.unit||"")}</td><td class="r num">${v.price?money(v.price):"–"}</td></tr>`; }).join("")}</table></div>
+  <p class="small mut">⚠ = thức ăn dưới ${LOW_FEED_KG} kg. Tồn kho tự trừ khi người phụ trách ao lưu lượng ăn / xử lý.</p>
+  ${edit && items.length ? `<div class="panel"><h3 style="margin-top:0">Nhập / xuất / kiểm kê</h3>
+    <div class="f2">
+      <div><label>Loại</label><select id="mtype"><option value="in">Nhập kho</option><option value="out">Xuất kho (khác cho ao)</option><option value="adj">Kiểm kê (nhập số tồn thực tế)</option></select></div>
+      <div><label>Hàng</label><select id="mitem">${itemOptions("", "")}</select></div>
+      <div><label id="mqlbl">Số lượng</label><input id="mqty" inputmode="decimal"></div>
+      <div><label>Ngày</label><input type="date" id="mdate" value="${today()}" max="${today()}"></div>
+      <div><label>Đơn giá nhập (đ, nếu có)</label><input id="mprice" inputmode="numeric"></div>
+      <div><label>Ghi chú</label><input id="mnote" placeholder="Nhà cung cấp, số phiếu…"></div></div>
+    <div class="acts"><button class="btn p" data-msave>Lưu</button></div></div>` : ""}
+  ${edit ? `<details class="panel"><summary><b>Thêm hàng mới vào danh mục</b></summary>
+    <div class="f2" style="margin-top:10px"><div><label>Tên hàng</label><input id="iname"></div>
+    <div><label>Nhóm</label><select id="igroup">${Object.entries(GROUPS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></div>
+    <div><label>Đơn vị tính</label><input id="iunit" placeholder="kg, lít, bao…"></div></div>
+    <div class="acts"><button class="btn" data-isave>Thêm</button></div></details>` : ""}
+  <h3>Đã trừ tự động từ nhập liệu ao (7 ngày)</h3>
+  ${usedDates.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Hàng</th><th class="r">Lượng</th></tr>
+  ${usedDates.map(d => Object.entries(used[d]).map(([it,q],i) => `<tr><td>${i?"":vnDate(d)}</td><td>${esc(itemName(it))}</td><td class="r num">${fmt(q)} ${esc(itemUnit(it))}</td></tr>`).join("")).join("")}</table></div>` : `<p class="mut">Chưa có.</p>`}
+  <h3>Phiếu nhập / xuất gần đây</h3>
+  ${S.moves.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Loại</th><th>Hàng</th><th class="r">Lượng</th><th class="r">Đơn giá</th><th>Ghi chú</th><th>Người nhập</th></tr>
+  ${S.moves.slice(0,40).map(m=>`<tr><td>${vnDate(m.date)}</td><td>${MV[m.type]||m.type}</td><td>${esc(itemName(m.item))}</td><td class="r num">${m.type==="out"?"−":m.type==="adj"&&m.qty<0?"":"+"}${fmt(m.qty)}</td><td class="r num">${m.price?money(m.price):"–"}</td><td class="small">${esc(m.note||"")}</td><td class="small mut">${esc(userName(m.by))}</td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có.</p>`}`;
+}
+document.addEventListener("change", e => { if (e.target.id === "mtype") $("#mqlbl").textContent = e.target.value === "adj" ? "Số tồn thực tế đếm được" : "Số lượng"; });
+document.addEventListener("click", async e => {
+  if (e.target.closest("[data-msave]")) {
+    const type = $("#mtype").value, it = $("#mitem").value, q = num($("#mqty").value), d = $("#mdate").value, price = num($("#mprice").value);
+    if (!it || isNaN(q) || q < 0 || !d) return toast("Cần chọn hàng, số lượng và ngày.");
+    if (type !== "adj" && q === 0) return toast("Số lượng phải lớn hơn 0.");
+    const cur = S.items[it].qty || 0;
+    const change = type === "in" ? q : type === "out" ? -q : q - cur;
+    if (type === "adj" && !confirm(`Tồn trên hệ thống: ${fmt(cur)}. Thực tế: ${fmt(q)}. Chênh lệch ${change>=0?"+":""}${fmt(change)}. Lưu kiểm kê?`)) return;
+    const b = writeBatch(db);
+    b.set(doc(collection(db,"stockMoves")), { type, item:it, qty: type==="adj" ? change : q, date:d, price:isNaN(price)?null:price, note:$("#mnote").value.trim(), by:S.email, at:serverTimestamp() });
+    const upd = { qty: increment(change) }; if (type === "in" && !isNaN(price) && price > 0) upd.price = price;
+    b.update(doc(db,"stockItems",it), upd);
+    try { await b.commit(); toast("Đã lưu phiếu kho."); rerender(); } catch (er) { console.error(er); toast("Không lưu được."); }
+    return;
+  }
+  if (e.target.closest("[data-isave]")) {
+    const name = $("#iname").value.trim(); if (!name) return toast("Chưa nhập tên hàng.");
+    if (Object.values(S.items).some(v => v.name.toLowerCase() === name.toLowerCase())) return toast("Hàng này đã có trong danh mục.");
+    try { await setDoc(doc(collection(db,"stockItems")), { name, group:$("#igroup").value, unit:$("#iunit").value.trim(), qty:0 }); toast("Đã thêm " + name); rerender(); }
+    catch (er) { console.error(er); toast("Không thêm được."); }
+  }
+});
+
+/* ===== Thu – chi ===== */
+function vFin(){
+  const m = UI.finMonth;
+  const rows = S.fin.filter(f => (f.date||"").startsWith(m)).sort((a,b)=>b.date.localeCompare(a.date));
+  const chi = rows.filter(r=>r.type==="chi").reduce((a,r)=>a+(r.amount||0),0), thu = rows.filter(r=>r.type==="thu").reduce((a,r)=>a+(r.amount||0),0);
+  const byCat = {}; rows.filter(r=>r.type==="chi").forEach(r => byCat[r.cat] = (byCat[r.cat]||0) + (r.amount||0));
+  return `<h2>Thu – chi</h2>
+  <div class="panel"><h3 style="margin-top:0">Nhập khoản mới</h3>
+    <div class="f2">
+      <div><label>Loại</label><select id="ftype"><option value="chi">Chi phí</option><option value="thu">Doanh thu</option></select></div>
+      <div><label>Ngày</label><input type="date" id="fdate" value="${today()}"></div>
+      <div><label>Hạng mục</label><select id="fcat">${FIN_CATS.chi.map(c=>`<option>${c}</option>`).join("")}</select></div>
+      <div><label>Số tiền (đ)</label><input id="famt" inputmode="numeric"></div>
+      <div><label>Ao (nếu riêng 1 ao)</label><select id="fpond"><option value="">Chung</option>${POND_IDS.map(p=>`<option>${p}</option>`).join("")}</select></div>
+      <div><label>Ghi chú</label><input id="fnote"></div></div>
+    <div class="acts"><button class="btn p" data-fsave>Lưu</button></div></div>
+  <div class="f2" style="max-width:220px"><div><label>Xem tháng</label><input type="month" id="fmonth" value="${m}"></div></div>
+  <div class="kp"><div><span>Tổng chi</span><b class="num">${money(chi)}</b></div><div><span>Tổng thu</span><b class="num">${money(thu)}</b></div><div><span>Chênh lệch</span><b class="num ${thu-chi<0?"bad":"ok"}">${money(thu-chi)}</b></div></div>
+  ${Object.keys(byCat).length ? `<div class="tw" style="margin-bottom:12px"><table><tr><th>Hạng mục chi</th><th class="r">Số tiền</th></tr>${Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<tr><td>${esc(c)}</td><td class="r num">${money(v)}</td></tr>`).join("")}</table></div>` : ""}
+  ${rows.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Loại</th><th>Hạng mục</th><th>Ao</th><th class="r">Số tiền</th><th>Ghi chú</th><th>Người nhập</th><th></th></tr>
+  ${rows.map(r=>`<tr><td>${vnDate(r.date)}</td><td>${r.type==="thu"?`<span class="chip g">Thu</span>`:`<span class="chip r">Chi</span>`}</td><td>${esc(r.cat)}</td><td>${esc(r.pond||"Chung")}</td><td class="r num">${money(r.amount)}</td><td class="small">${esc(r.note||"")}</td><td class="small mut">${esc(userName(r.by))}</td><td><button class="btn s d" data-fdel="${r.id}">Xoá</button></td></tr>`).join("")}</table></div>` : `<p class="mut">Tháng này chưa có khoản nào.</p>`}`;
+}
+document.addEventListener("change", e => {
+  if (e.target.id === "ftype") $("#fcat").innerHTML = FIN_CATS[e.target.value].map(c=>`<option>${c}</option>`).join("");
+  if (e.target.id === "fmonth") { UI.finMonth = e.target.value || today().slice(0,7); rerender(); }
+});
+document.addEventListener("click", async e => {
+  if (e.target.closest("[data-fsave]")) {
+    const amt = num($("#famt").value.replace(/\./g, "")), d = $("#fdate").value;
+    if (!d || isNaN(amt) || amt <= 0) return toast("Cần ngày và số tiền.");
+    try { await setDoc(doc(collection(db,"finance")), { type:$("#ftype").value, date:d, cat:$("#fcat").value, pond:$("#fpond").value || null, amount:amt, note:$("#fnote").value.trim(), by:S.email, at:serverTimestamp() });
+      toast("Đã lưu " + money(amt)); rerender(); } catch (er) { console.error(er); toast("Không lưu được."); }
+    return;
+  }
+  const fd = e.target.closest("[data-fdel]");
+  if (fd && confirm("Xoá khoản này?")) { try { await deleteDoc(doc(db,"finance",fd.dataset.fdel)); toast("Đã xoá."); } catch (er) { toast("Không xoá được."); } }
+});
+
+/* ===== Quản lý ===== */
+function vQl(){
+  const users = Object.entries(S.users).sort((a,b)=>(a[1].name||a[0]).localeCompare(b[1].name||b[0],"vi"));
+  const hasPonds = Object.keys(S.ponds).length, hasItems = Object.keys(S.items).length;
+  return `<h2>Quản lý</h2>
+  ${!hasPonds || !hasItems ? `<div class="panel"><h3 style="margin-top:0">Thiết lập ban đầu</h3><div class="acts" style="margin-top:0">
+    ${!hasPonds ? `<button class="btn p" data-seed-ponds>Tạo 24 ao (A1–D6)</button>` : ""}
+    ${!hasItems ? `<button class="btn" data-seed-items>Tạo danh mục thức ăn mặc định</button>` : ""}</div></div>` : ""}
+  <div class="panel"><h3 style="margin-top:0">Thêm nhân viên</h3>
+    <div class="f2"><div><label>Gmail</label><input id="uemail" type="email" placeholder="ten@gmail.com"></div>
+    <div><label>Họ tên</label><input id="uname"></div>
+    <div><label>Vai trò</label><select id="urole">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${k==="ao"?"selected":""}>${v}</option>`).join("")}</select></div></div>
+    <div class="acts"><button class="btn p" data-usave>Thêm / cập nhật</button></div></div>
+  <h3>Danh sách nhân viên (${users.length})</h3>
+  ${users.length ? `<div class="tw"><table><tr><th>Họ tên</th><th>Gmail</th><th>Vai trò</th><th>Trạng thái</th><th></th></tr>
+  ${users.map(([e,u])=>`<tr><td>${esc(u.name||"")}</td><td class="small">${esc(e)}</td>
+    <td><select data-urole="${esc(e)}">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${k===u.role?"selected":""}>${v}</option>`).join("")}</select></td>
+    <td>${u.active===false?`<span class="chip r">Đã khoá</span>`:`<span class="chip g">Hoạt động</span>`}</td>
+    <td><button class="btn s ${u.active===false?"":"d"}" data-ulock="${esc(e)}">${u.active===false?"Mở khoá":"Khoá"}</button></td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có nhân viên.</p>`}
+  <div class="panel"><h3 style="margin-top:0">Sao lưu</h3>
+    <p class="small mut">Tải toàn bộ số liệu (nhật ký ao, kho, thu–chi, vụ nuôi, thu hoạch) về máy dạng Excel.</p>
+    <button class="btn" data-export>Xuất dữ liệu ra Excel</button></div>`;
+}
+document.addEventListener("change", async e => {
+  const r = e.target.closest("[data-urole]"); if (!r) return;
+  try { await updateDoc(doc(db,"users",r.dataset.urole), { role:r.value }); toast("Đã đổi vai trò."); } catch (er) { toast("Không lưu được."); }
+  rerender();
+});
+document.addEventListener("click", async e => {
+  if (e.target.closest("[data-usave]")) {
+    const em = $("#uemail").value.trim().toLowerCase(), name = $("#uname").value.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return toast("Gmail không hợp lệ.");
+    if (!name) return toast("Chưa nhập họ tên.");
+    try { await setDoc(doc(db,"users",em), { name, role:$("#urole").value, active:true }, { merge:true }); toast("Đã cấp quyền cho " + name); rerender(); }
+    catch (er) { console.error(er); toast("Không lưu được."); }
+    return;
+  }
+  const lk = e.target.closest("[data-ulock]");
+  if (lk) { const em = lk.dataset.ulock, u = S.users[em]; const lock = u.active !== false;
+    if (lock && !confirm(`Khoá tài khoản ${u.name||em}? Người này sẽ không nhập được nữa.`)) return;
+    try { await updateDoc(doc(db,"users",em), { active:!lock }); toast(lock ? "Đã khoá." : "Đã mở khoá."); } catch (er) { toast("Không lưu được."); } return; }
+  if (e.target.closest("[data-seed-ponds]")) {
+    const b = writeBatch(db); POND_IDS.forEach(p => b.set(doc(db,"ponds",p), { zone:p[0], area:defaultArea(p), owner:null, cycleId:null }, { merge:true }));
+    try { await b.commit(); toast("Đã tạo 24 ao."); } catch (er) { console.error(er); toast("Không tạo được."); } return;
+  }
+  if (e.target.closest("[data-seed-items]")) {
+    const feeds = ["HL143 No.1 Hải Đại","HL143 No.4 Hải Đại","AQUA-501.3 Hải Đại","Jade + 3 (Skretting)","Jade + 4 (Skretting)"];
+    const b = writeBatch(db); feeds.forEach(n => b.set(doc(collection(db,"stockItems")), { name:n, group:"thuc_an", unit:"kg", qty:0 }));
+    try { await b.commit(); toast("Đã tạo danh mục thức ăn. Thủ kho nhập tồn đầu kỳ bằng “Kiểm kê”."); } catch (er) { console.error(er); toast("Không tạo được."); } return;
+  }
+  if (e.target.closest("[data-export]")) exportExcel(e.target.closest("[data-export]"));
+});
+
+function loadXLSX(){ return window.XLSX ? Promise.resolve(window.XLSX) : new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload = () => ok(window.XLSX); s.onerror = no; document.head.appendChild(s); }); }
+async function exportExcel(btn){
+  btn.disabled = true; btn.textContent = "Đang xuất…";
+  try {
+    const X = await loadXLSX();
+    const all = async c => (await getDocs(collection(db, c))).docs.map(d => Object.assign({ id:d.id }, d.data()));
+    const [logs, moves, fin, cycles, harv] = await Promise.all(["logs","stockMoves","finance","cycles","harvests"].map(all));
+    const wb = X.utils.book_new();
+    const add = (name, rows) => X.utils.book_append_sheet(wb, X.utils.json_to_sheet(rows.length ? rows : [{ "(trống)":"" }]), name);
+    add("Nhật ký ao", logs.sort((a,b)=>a.date.localeCompare(b.date)||a.pond.localeCompare(b.pond)).map(l => Object.assign({ "Ngày":vnDate(l.date), "Ao":l.pond,
+      "Thức ăn (kg)":l.feedTotal ?? (l.feeds||[]).reduce((a,f)=>a+(f.kg||0),0),
+      "Chi tiết thức ăn":(l.feeds||[]).map(f=>`${itemName(f.item)}: ${f.kg}`).join("; "),
+      "Xử lý":(l.treats||[]).map(t=>`${itemName(t.item)}: ${t.qty} ${itemUnit(t.item)}`).join("; ") },
+      Object.fromEntries(WATER.map(f => [f.n, l.water && l.water[f.k] != null ? l.water[f.k] : ""])), { "Ghi chú":l.note||"", "Người nhập":userName(l.by) })));
+    add("Tồn kho", Object.values(S.items).map(v => ({ "Hàng":v.name, "Nhóm":GROUPS[v.group]||"", "Tồn":v.qty||0, "ĐVT":v.unit||"", "Giá nhập gần nhất":v.price||"" })));
+    add("Phiếu kho", moves.sort((a,b)=>a.date.localeCompare(b.date)).map(m => ({ "Ngày":vnDate(m.date), "Loại":{in:"Nhập",out:"Xuất",adj:"Kiểm kê"}[m.type]||m.type, "Hàng":itemName(m.item), "Lượng":m.qty, "Đơn giá":m.price||"", "Ghi chú":m.note||"", "Người nhập":userName(m.by) })));
+    add("Thu chi", fin.sort((a,b)=>a.date.localeCompare(b.date)).map(f => ({ "Ngày":vnDate(f.date), "Loại":f.type==="thu"?"Thu":"Chi", "Hạng mục":f.cat, "Ao":f.pond||"Chung", "Số tiền":f.amount, "Ghi chú":f.note||"", "Người nhập":userName(f.by) })));
+    add("Vụ nuôi", cycles.sort((a,b)=>a.stockDate.localeCompare(b.stockDate)).map(c => ({ "Ao":c.pond, "Ngày thả":vnDate(c.stockDate), "Số con thả":c.stockCount, "Trạng thái":c.status==="done"?"Đã kết thúc":"Đang nuôi", "Ngày kết thúc":vnDate(c.endDate), "Ghi chú":c.note||"" })));
+    add("Thu hoạch", harv.sort((a,b)=>a.date.localeCompare(b.date)).map(h => ({ "Ngày":vnDate(h.date), "Ao":h.pond, "Hình thức":HARV_TYPES[h.type]||h.type, "kg":h.kg, "Size":h.size??"", "Ghi chú":h.note||"", "Người nhập":userName(h.by) })));
+    X.writeFile(wb, `ESGFarm_sao-luu_${today()}.xlsx`);
+  } catch (e) { console.error(e); toast("Xuất không được: " + (e.code || e.message)); }
+  finally { btn.disabled = false; btn.textContent = "Xuất dữ liệu ra Excel"; }
+}
+</script>
+</body>
+</html>
