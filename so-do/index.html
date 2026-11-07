@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sơ đồ trang trại · ShrimpVet ESG Farm</title>
+<meta name="description" content="Sơ đồ mặt bằng ShrimpVet ESG Farm, Gành Hào, Cà Mau: vị trí ao nuôi, ao lắng, ao xử lý, kênh cấp và thải.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--bg:#f3f6fa;--card:#fff;--ink:#14223a;--muted:#5b6a80;--line:#dbe3ee;--brand:#1d3f74;--shrimp:#e8762c;--font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.5}
+.top{background:#fff;border-bottom:1px solid var(--line)}
+.top .in,.hero .in,main{max-width:1000px;margin:0 auto;padding-left:16px;padding-right:16px}
+.top .in{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;padding-bottom:12px}
+.brand b{display:block;color:var(--brand);font-weight:800;letter-spacing:.02em}
+.brand small{color:var(--shrimp);font-weight:600}
+.top a{color:var(--brand);font-weight:600;text-decoration:none;font-size:14px}
+.hero{background:var(--brand);color:#fff}
+.hero .in{padding-top:22px;padding-bottom:22px}
+.hero small{letter-spacing:.12em;text-transform:uppercase;opacity:.8;font-size:12px}
+.hero h1{margin:4px 0 0;font-size:32px;line-height:1.2}
+main{padding-top:18px;padding-bottom:40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.mapwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px}
+.mapwrap svg{display:block;width:100%;min-width:640px;height:auto}
+.hint{color:var(--muted);font-size:14px;margin:0 0 10px}
+.fm-legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13.5px;color:var(--ink)}
+h2{font-size:17px;margin:0 0 10px}
+footer{color:var(--muted);font-size:13px;text-align:center}
+@media (max-width:640px){.hero h1{font-size:26px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <div class="brand"><b>SHRIMPVET ESG FARM</b><small>Minh Phu AquaMekong Co., Ltd</small></div>
+  <a href="../">← Hồ sơ ao nuôi</a>
+</div></header>
+<section class="hero"><div class="in"><small>Gành Hào · Cà Mau</small><h1>Sơ đồ trang trại</h1></div></section>
+<main>
+  <div class="card">
+    <p class="hint">Bấm vào một <b>ao nuôi (A, B, C, D)</b> để xem hồ sơ ao: tăng trưởng, lượng thức ăn, chất lượng nước và kết quả xét nghiệm. Trên điện thoại, kéo ngang để xem hết sơ đồ.</p>
+    <div class="mapwrap" id="map"></div>
+  </div>
+  <div class="card"><h2>Chú thích</h2><div id="legend"></div></div>
+  <div class="card"><h2>Quy trình nước</h2>
+    <p class="hint" style="margin:0">Nước lấy từ <b>Kênh Rạch Cóc</b> qua cống cấp vào <b>ao lắng thô (AL)</b>, qua <b>ao xử lý (XL)</b>, lần lượt qua <b>ao lắng tinh LT1 → LT2 → LT3</b>, đến <b>ao sẵn sàng SS1, SS2</b> rồi mới cấp cho ao nuôi. Nước thải từ ao nuôi theo kênh chứa thải hai bên về các <b>ao chứa thải (AT)</b> trước khi ra <b>Kênh Chệt</b>.</p>
+  </div>
+  <footer>ShrimpVet ESG Farm · Minh Phu AquaMekong Co., Ltd · Gành Hào, Cà Mau</footer>
+</main>
+<script type="module">
+import { renderFarmMap, legendHTML } from "./farm-map.js";
+document.getElementById("map").innerHTML = renderFarmMap({ pond: id => ({ href: "../#" + id, title: `Ao ${id} – bấm để xem hồ sơ ao` }) });
+document.getElementById("legend").innerHTML = legendHTML();
+</script>
+</body>
+</html>
