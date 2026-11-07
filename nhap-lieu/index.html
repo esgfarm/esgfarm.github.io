@@ -107,6 +107,8 @@ nav.tabs button{display:flex;gap:6px;align-items:center}
 .tasks button{border:0;background:none;padding:0;font:inherit;color:var(--ac);font-weight:600;cursor:pointer;text-align:left}
 .feed{list-style:none;margin:0;padding:0}.feed li{padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}.feed li:last-child{border-bottom:0}
 .feed time{display:block;font-size:12px;color:var(--mut)}
+.mapwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.mapwrap svg{display:block;width:100%;min-width:640px;height:auto}
+.fm-legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13.5px}
 .back{border:0;background:none;color:var(--ac);font:inherit;font-weight:600;cursor:pointer;padding:0;margin-bottom:6px}
 @media (max-width:560px){.row{grid-template-columns:minmax(0,1fr) 90px 40px}}
 </style>
@@ -119,6 +121,7 @@ nav.tabs button{display:flex;gap:6px;align-items:center}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { renderFarmMap, legendHTML } from "../so-do/farm-map.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc, getDocs, query, where, orderBy, limit, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -269,14 +272,16 @@ const ICON = {
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   check:'<path d="m5 12 5 5 9-10"/>',
-  gia:'<path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/>'
+  gia:'<path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/>',
+  map:'<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>'
 };
-const SHORT = { home:"Tổng quan", ao:"Ao", vu:"Vụ nuôi", xn:"Xét nghiệm", kho:"Kho", gia:"Giá tôm", fin:"Thu–chi", ql:"Quản lý" };
+const SHORT = { map:"Sơ đồ", home:"Tổng quan", ao:"Ao", vu:"Vụ nuôi", xn:"Xét nghiệm", kho:"Kho", gia:"Giá tôm", fin:"Thu–chi", ql:"Quản lý" };
 const ico = k => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICON[k] || ""}</svg>`;
 function tabsFor(){
   const r = role(), t = [];
   if (["admin","kythuat"].includes(r)) t.push(["home","Tổng quan"]);
   if (["admin","kythuat","ao"].includes(r)) t.push(["ao","Ao nuôi"]);
+  t.push(["map","Sơ đồ"]);
   if (["admin","kythuat"].includes(r)) t.push(["vu","Vụ nuôi & phân công"]);
   if (["admin","kythuat"].includes(r)) t.push(["xn","Xét nghiệm"]);
   if (["admin","kho","kythuat"].includes(r)) t.push(["kho","Kho"]);
@@ -306,7 +311,7 @@ function render(){
   nav.querySelector(".in").innerHTML = tabs.map(([k,n]) => `<button data-tab="${k}" class="${k===UI.tab?"on":""}" title="${n}">${ico(k)}<span class="tl">${n}</span><span class="ts">${SHORT[k] || n}</span></button>`).join("");
   let h = `<div class="small mut">Vai trò: <b>${ROLES[role()]}</b></div>`;
   if (S.err) h += `<div class="banner err">${esc(S.err)}</div>`;
-  h += ({ gia:vGia, home:vHome, ao:vAo, vu:vVu, xn:vXn, kho:vKho, fin:vFin, ql:vQl })[UI.tab]();
+  h += ({ map:vMap, gia:vGia, home:vHome, ao:vAo, vu:vVu, xn:vXn, kho:vKho, fin:vFin, ql:vQl })[UI.tab]();
   $("#main").innerHTML = h;
 }
 $("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.tab = b.dataset.tab; UI.pond = null; rerender(); window.scrollTo(0,0); });
@@ -856,6 +861,39 @@ document.addEventListener("click", async e => {
   const xd = e.target.closest("[data-xdel]");
   if (xd && confirm("Xoá kết quả xét nghiệm này?")) { try { await deleteDoc(doc(db,"tests",xd.dataset.xdel)); toast("Đã xoá."); } catch (er) { toast("Không xoá được."); } }
 });
+
+/* ===== Sơ đồ trang trại ===== */
+function vMap(){
+  const t = today();
+  const latestPcr = {}; S.tests.forEach(x => { if (x.type !== "pcr") return; const k = x.pond + "|" + x.target; if (!latestPcr[k] || latestPcr[k].date < x.date) latestPcr[k] = x; });
+  const st = {};
+  POND_IDS.forEach(p => {
+    const cy = activeCycle(p);
+    if (!cy) { st[p] = { c:"empty" }; return; }
+    const lw = lastWater(p), al = lw ? waterAlerts(lw.water) : [];
+    const pos = Object.values(latestPcr).filter(x => x.pond === p && x.result === "pos" && x.cycleId === cy.id).map(x => x.target);
+    const miss = missingDays(p);
+    st[p] = { c: pos.length || al.length ? "alert" : miss.length ? "miss" : "ok", cy, al, pos, miss };
+  });
+  const C = { ok:{ fill:"#bfe3c9", stroke:"#1f8a4c", n:"Đang nuôi, đủ số liệu" }, miss:{ fill:"#fbe3b8", stroke:"#b26b00", n:"Đang nuôi, thiếu số liệu" },
+    alert:{ fill:"#f7c9c2", stroke:"#c23a2b", n:"Có cảnh báo (môi trường / PCR)" }, empty:{ fill:"#e7ebf0", stroke:"#a7b2c0", n:"Trống / chưa thả" } };
+  const svg = renderFarmMap({ pond: id => {
+    const s = st[id]; if (!s) return {};
+    const c = C[s.c], mine = S.ponds[id] && S.ponds[id].owner === S.email;
+    const sub = s.cy ? `DOC ${daysBetween(s.cy.stockDate, t)}` : "Trống";
+    const why = s.c === "alert" ? [...s.pos.map(x => "PCR+ " + x), ...s.al].join(", ") : s.c === "miss" ? "Thiếu: " + s.miss.map(shortDate).join(", ") : "";
+    return { fill:c.fill, stroke:c.stroke, sub, strong: mine, data:`data-go="ao" data-gopond="${id}"`,
+      title:`Ao ${id} · ${c.n}${why ? " · " + why : ""}${S.ponds[id] && S.ponds[id].owner ? " · " + userName(S.ponds[id].owner) : ""} – bấm để mở` };
+  } });
+  const box = (f, s) => `<i style="display:inline-block;width:18px;height:12px;border-radius:3px;background:${f};border:1.5px solid ${s};vertical-align:-1px;margin-right:6px"></i>`;
+  const cnt = k => Object.values(st).filter(x => x.c === k).length;
+  return `<div class="ph"><h2 style="margin:0">Sơ đồ trang trại</h2><a class="small" href="../so-do/" target="_blank" rel="noopener">Bản cho khách ↗</a></div>
+  <div class="acts" style="margin:6px 0 10px">${Object.entries(C).map(([k, c]) => `<span class="chip" style="background:var(--sf);border:1px solid var(--line);color:var(--ink);padding:4px 10px">${box(c.fill, c.stroke)}${c.n}: <b style="margin-left:4px">${cnt(k)}</b></span>`).join("")}</div>
+  <div class="panel" style="padding:8px"><div class="mapwrap">${svg}</div></div>
+  <p class="small mut">Bấm vào ao nuôi để mở trang nhập liệu của ao đó. Rê chuột lên ao để xem lý do cảnh báo. ${role() === "ao" ? "Ao viền đậm là ao anh/chị phụ trách." : ""} Trên điện thoại kéo ngang để xem hết.</p>
+  <div class="panel"><b>Chú thích</b><div style="margin-top:8px">${legendHTML()}</div></div>`;
+}
+document.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches(".fm-pond[data-go]")) { e.preventDefault(); e.target.click(); } });
 
 /* ===== Giá tôm ===== */
 const DEFAULT_SIZES = [20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150, 200, 250, 300, 350, 400];
