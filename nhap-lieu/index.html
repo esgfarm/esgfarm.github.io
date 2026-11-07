@@ -33,8 +33,9 @@ nav.tabs button.on{color:var(--ac);border-bottom-color:var(--ac)}
 @media (max-width:700px){
   body.side{padding-bottom:64px}
   body.side nav.tabs{position:fixed;left:0;right:0;bottom:0;top:auto;border-top:1px solid var(--line);border-bottom:0;z-index:8;padding-bottom:env(safe-area-inset-bottom,0px)}
-  body.side nav.tabs .in{padding:0 4px;justify-content:space-around;gap:0}
-  body.side nav.tabs button{flex:1 1 0;min-width:0;flex-direction:column;gap:2px;font-size:10px;padding:7px 0 6px;border-bottom:0;border-top:3px solid transparent;white-space:nowrap;overflow:hidden}
+  body.side nav.tabs .in{padding:0 4px;justify-content:flex-start;gap:0;overflow-x:auto;scrollbar-width:none}
+  body.side nav.tabs .in::-webkit-scrollbar{display:none}
+  body.side nav.tabs button{flex:0 0 72px;min-width:0;flex-direction:column;gap:2px;font-size:10px;padding:7px 0 6px;border-bottom:0;border-top:3px solid transparent;white-space:nowrap;overflow:hidden}
   body.side nav.tabs button.on{border-top-color:var(--ac)}
   body.side nav.tabs .ic{width:20px;height:20px}
 }
@@ -109,6 +110,17 @@ nav.tabs button{display:flex;gap:6px;align-items:center}
 .feed time{display:block;font-size:12px;color:var(--mut)}
 .mapwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.mapwrap svg{display:block;width:100%;min-width:640px;height:auto}
 .fm-legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13.5px}
+.qt input,.qt select{padding:7px 8px;font-size:15px}
+.qt td{vertical-align:middle;white-space:nowrap}
+.qt input.kg{width:72px;text-align:right}.qt input.pc{width:62px;text-align:right}.qt input.w{width:72px;text-align:right}
+.qt select{min-width:180px;max-width:220px}
+.qt tr.chg td{background:var(--acs)}
+.qt input.bad{border-color:var(--bad);background:var(--bads)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--sf)}
+.seg button{border:0;background:none;font:inherit;font-weight:600;font-size:14px;padding:9px 14px;color:var(--mut);cursor:pointer}
+.seg button.on{background:var(--ac);color:#fff}
+.sticky-save{position:sticky;bottom:0;background:var(--bg);padding:10px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;z-index:3}
+@media (max-width:700px){.sticky-save{bottom:64px}.qt select{min-width:120px;max-width:140px}.qt input.kg{width:76px}}
 .back{border:0;background:none;color:var(--ac);font:inherit;font-weight:600;cursor:pointer;padding:0;margin-bottom:6px}
 @media (max-width:560px){.row{grid-template-columns:minmax(0,1fr) 90px 40px}}
 </style>
@@ -273,13 +285,15 @@ const ICON = {
   user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   check:'<path d="m5 12 5 5 9-10"/>',
   gia:'<path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/>',
-  map:'<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>'
+  map:'<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
+  nhanh:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>'
 };
-const SHORT = { map:"Sơ đồ", home:"Tổng quan", ao:"Ao", vu:"Vụ nuôi", xn:"Xét nghiệm", kho:"Kho", gia:"Giá tôm", fin:"Thu–chi", ql:"Quản lý" };
+const SHORT = { nhanh:"Nhập nhanh", map:"Sơ đồ", home:"Tổng quan", ao:"Ao", vu:"Vụ nuôi", xn:"Xét nghiệm", kho:"Kho", gia:"Giá tôm", fin:"Thu–chi", ql:"Quản lý" };
 const ico = k => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICON[k] || ""}</svg>`;
 function tabsFor(){
   const r = role(), t = [];
   if (["admin","kythuat"].includes(r)) t.push(["home","Tổng quan"]);
+  if (["admin","kythuat","ao"].includes(r)) t.push(["nhanh","Nhập nhanh"]);
   if (["admin","kythuat","ao"].includes(r)) t.push(["ao","Ao nuôi"]);
   t.push(["map","Sơ đồ"]);
   if (["admin","kythuat"].includes(r)) t.push(["vu","Vụ nuôi & phân công"]);
@@ -308,10 +322,11 @@ function render(){
   const tabs = tabsFor();
   if (!tabs.some(t => t[0] === UI.tab)) UI.tab = tabs[0][0];
   const nav = $("#tabs"); nav.hidden = false; document.body.classList.add("side");
-  nav.querySelector(".in").innerHTML = tabs.map(([k,n]) => `<button data-tab="${k}" class="${k===UI.tab?"on":""}" title="${n}">${ico(k)}<span class="tl">${n}</span><span class="ts">${SHORT[k] || n}</span></button>`).join("");
+  const navIn = nav.querySelector(".in"); navIn.innerHTML = tabs.map(([k,n]) => `<button data-tab="${k}" class="${k===UI.tab?"on":""}" title="${n}">${ico(k)}<span class="tl">${n}</span><span class="ts">${SHORT[k] || n}</span></button>`).join("");
+  const onB = navIn.querySelector("button.on"); if (onB && window.innerWidth <= 700) { const L = onB.offsetLeft - navIn.clientWidth / 2 + onB.clientWidth / 2; navIn.scrollLeft = Math.max(0, L); }
   let h = `<div class="small mut">Vai trò: <b>${ROLES[role()]}</b></div>`;
   if (S.err) h += `<div class="banner err">${esc(S.err)}</div>`;
-  h += ({ map:vMap, gia:vGia, home:vHome, ao:vAo, vu:vVu, xn:vXn, kho:vKho, fin:vFin, ql:vQl })[UI.tab]();
+  h += ({ nhanh:vQuick, map:vMap, gia:vGia, home:vHome, ao:vAo, vu:vVu, xn:vXn, kho:vKho, fin:vFin, ql:vQl })[UI.tab]();
   $("#main").innerHTML = h;
 }
 $("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.tab = b.dataset.tab; UI.pond = null; rerender(); window.scrollTo(0,0); });
@@ -568,6 +583,165 @@ document.addEventListener("mouseover", e => {
   tip.style.left = x + "px"; tip.style.top = Math.max(h.dataset.y * k, 30) + "px";
   if (h.nextElementSibling && h.nextElementSibling.classList.contains("bar")) h.nextElementSibling.classList.add("hl");
 });
+
+/* ===== Nhập nhanh nhiều ao ===== */
+function quickPonds(){ return POND_IDS.filter(p => activeCycle(p) && (can.allPonds() || (S.ponds[p] && S.ponds[p].owner === S.email))); }
+function quickDefaultDate(){
+  const miss = quickPonds().flatMap(p => missingDays(p)).sort();
+  return miss[0] || today();
+}
+// Thức ăn của 1 ngày: tối đa 3 loại, mỗi loại kèm số kg (sắp theo kg giảm dần)
+function feedSplit(l){
+  const f = (l && l.feeds || []).filter(x => x.kg > 0).slice().sort((a, b) => b.kg - a.kg);
+  return { tot: Math.round(f.reduce((a, x) => a + x.kg, 0) * 100) / 100, rows: f.slice(0, 3), many: f.length > 3 };
+}
+function prevLog(p, d){ for (let i = 1; i <= 7; i++) { const l = S.logs[p + "_" + addDays(d, -i)]; if (l && ((l.feeds || []).length || (l.note || "").includes(NO_FEED))) return l; } return null; }
+function vQuick(){
+  const ponds = quickPonds();
+  if (!ponds.length) return `<h2>Nhập nhanh</h2><div class="banner">${can.allPonds() ? "Chưa có ao đang nuôi." : "Anh/chị chưa được giao ao nào đang nuôi."}</div>`;
+  if (!UI.qDate) UI.qDate = quickDefaultDate();
+  const d = UI.qDate, tab = UI.qTab || "feed";
+  const minD = can.allPonds() ? "" : addDays(today(), -13);
+  const missing = ponds.filter(p => !fedDay(p, d)).length;
+  let body = "";
+  if (tab === "feed") {
+    body = `<div class="tw"><table class="qt"><tr><th>Ao</th><th>Thức ăn 1</th><th class="r">kg</th><th>Thức ăn 2 (nếu trộn)</th><th class="r">kg</th><th>Thức ăn 3 (nếu trộn)</th><th class="r">kg</th><th class="r">Tổng</th><th>Không cho ăn</th><th>Ghi chú</th></tr>
+    ${ponds.map(p => {
+      const l = S.logs[p + "_" + d], cur = feedSplit(l), pv = prevLog(p, d), pf = feedSplit(pv);
+      const has = !!l && (cur.tot > 0 || (l.note || "").includes(NO_FEED));
+      if (cur.many) return `<tr><td><b>${p}</b></td><td colspan="9" class="small mut">Ngày này có hơn 3 loại thức ăn, <a href="#" data-go="ao" data-gopond="${p}">sửa trong trang ao</a></td></tr>`;
+      const sel = i => cur.rows.length ? (cur.rows[i] ? cur.rows[i].item : "") : (pf.rows[i] ? pf.rows[i].item : "");
+      return `<tr data-qp="${p}" data-prev='${esc(JSON.stringify(pf.rows))}'>
+        <td><b>${p}</b><div class="small mut">DOC ${daysBetween(activeCycle(p).stockDate, d)}</div></td>
+        ${[0, 1, 2].map(i => `<td><select name="f${i}" data-orig="${cur.rows[i] ? cur.rows[i].item : ""}">${itemOptions("feed", sel(i))}</select></td>
+          <td class="r"><input class="kg" name="k${i}" inputmode="decimal" value="${cur.rows[i] ? cur.rows[i].kg : ""}" placeholder="${!cur.rows.length && pf.rows[i] ? nf.format(pf.rows[i].kg) : ""}" data-orig="${cur.rows[i] ? cur.rows[i].kg : ""}"></td>`).join("")}
+        <td class="r num"><b data-tot>${cur.tot ? nf.format(cur.tot) : "–"}</b></td>
+        <td style="text-align:center"><input type="checkbox" name="nofeed" style="width:auto" ${l && (l.note || "").includes(NO_FEED) ? "checked" : ""} data-orig="${l && (l.note || "").includes(NO_FEED) ? 1 : 0}"></td>
+        <td class="small">${has ? `<span class="ok">✓ đã có</span>` : `<span class="warn">chưa nhập</span>`}</td></tr>`;
+    }).join("")}</table></div>
+    <p class="small mut">Loại thức ăn tự điền theo lần cho ăn trước, chỉ cần gõ <b>số kg từng loại</b>; cột Tổng tự cộng. Số mờ trong ô kg là lượng lần trước để tham khảo (chưa được lưu). Muốn bỏ một loại thì xoá số kg của loại đó.</p>`;
+  } else if (tab === "tr") {
+    const lst = ponds.map(p => { const l = S.logs[p + "_" + d]; return `<label style="display:inline-flex;gap:6px;align-items:center;margin:0 14px 8px 0;font-weight:600;color:var(--ink)"><input type="checkbox" name="trp" value="${p}" style="width:auto" checked> ${p}${l && (l.treats || []).length ? ` <span class="small mut" style="font-weight:400">(${esc(l.treats.map(t => itemName(t.item) + " " + fmt(t.qty)).join(", "))})</span>` : ""}</label>`; }).join("");
+    body = `<div class="panel"><div class="f2">
+      <div><label>Sản phẩm</label><select id="qtitem">${itemOptions("other", "")}</select></div>
+      <div><label>Liều mỗi ao</label><input id="qtqty" inputmode="decimal"></div>
+      <div style="grid-column:span 2"><label>Ghi thêm vào nhật ký (tuỳ chọn)</label><input id="qtnote" placeholder="vd: trộn vitamin C, tỏi"></div></div>
+      <div style="margin-top:12px"><label>Áp dụng cho ao <a href="#" data-trall="1" class="small">chọn tất cả</a> · <a href="#" data-trall="0" class="small">bỏ chọn</a></label>${lst}</div>
+      <p class="small mut">Ao đã có sản phẩm này trong ngày thì thay bằng liều mới, không cộng dồn. Kho tự trừ theo tổng liều.</p></div>`;
+  } else {
+    const F = WATER;
+    body = `<div class="tw"><table class="qt"><tr><th>Ao</th>${F.map(f => `<th class="r">${f.n.replace(" (mg/L)", "").replace(" (°C)", " °C").replace(" (‰)", " ‰").replace("Trọng lượng TB (g/con)", "TL TB (g)")}</th>`).join("")}</tr>
+    ${ponds.map(p => { const w = (S.logs[p + "_" + d] || {}).water || {};
+      return `<tr data-qw="${p}"><td><b>${p}</b></td>${F.map(f => `<td class="r"><input class="w ${w[f.k] != null && f.bad && f.bad(w[f.k]) ? "bad" : ""}" name="w_${f.k}" inputmode="decimal" value="${w[f.k] ?? ""}" data-orig="${w[f.k] ?? ""}"></td>`).join("")}</tr>`; }).join("")}</table></div>
+    <p class="small mut">Ô đỏ = ngoài ngưỡng (DO &lt; 5, pH &lt; 7,5, NO2 &gt; 2, TAN &gt; 5, kiềm &lt; 89). Xoá số trong ô rồi lưu là xoá chỉ số đó.</p>`;
+  }
+  return `<div class="ph"><h2 style="margin:0">Nhập nhanh</h2><span class="small mut">${ponds.length} ao ${can.allPonds() ? "đang nuôi" : "anh/chị phụ trách"}</span></div>
+  <div class="acts" style="margin:8px 0 12px;align-items:end">
+    <div><label>Ngày</label><input type="date" id="qdate" value="${d}" max="${today()}" ${minD ? `min="${minD}"` : ""} style="width:auto"></div>
+    <div class="seg">${[["feed","Lượng ăn"],["tr","Xử lý"],["env","Môi trường"]].map(([k, n]) => `<button data-qtab="${k}" class="${k === tab ? "on" : ""}">${n}</button>`).join("")}</div>
+  </div>
+  ${tab === "feed" ? `<div class="banner ${missing ? "" : "okb"}">${missing ? `Ngày ${vnDate(d)} còn <b>${missing}/${ponds.length}</b> ao chưa nhập lượng ăn.` : `Ngày ${vnDate(d)} đã nhập đủ ${ponds.length} ao.`}</div>` : ""}
+  ${body}
+  <div class="sticky-save">
+    ${tab === "feed" ? `<button class="btn" data-qcopy>Giống hôm trước</button>` : ""}
+    <button class="btn p" data-qsave>${tab === "tr" ? "Áp dụng cho các ao đã chọn" : "Lưu tất cả"}</button>
+    <span class="small mut" id="qmsg"></span>
+  </div>`;
+}
+document.addEventListener("change", e => {
+  if (e.target.id === "qdate") { UI.qDate = e.target.value || today(); rerender(); }
+  const tr = e.target.closest("tr[data-qp]");
+
+  if (tr) tr.classList.add("chg");
+});
+document.addEventListener("input", e => {
+  const tr = e.target.closest("tr[data-qp],tr[data-qw]"); if (tr) tr.classList.add("chg");
+  if (tr && tr.dataset.qp) { const t = [0, 1, 2].reduce((a, i) => { const v = num(tr.querySelector(`[name=k${i}]`).value); return a + (isNaN(v) ? 0 : v); }, 0);
+    tr.querySelector("[data-tot]").textContent = t ? nf.format(Math.round(t * 100) / 100) : "–"; }
+  if (e.target.matches(".qt input.w")) { const f = WATER.find(x => "w_" + x.k === e.target.name), v = num(e.target.value); e.target.classList.toggle("bad", !!(f && f.bad && !isNaN(v) && f.bad(v))); }
+});
+document.addEventListener("keydown", e => { // Enter: xuống ô cùng cột ở ao kế tiếp
+  if (e.key !== "Enter" || !e.target.matches(".qt input")) return;
+  e.preventDefault(); const td = e.target.closest("td"), tr = td.parentElement, i = [...tr.children].indexOf(td);
+  let nx = tr.nextElementSibling; while (nx && !nx.children[i]?.querySelector("input")) nx = nx.nextElementSibling;
+  if (nx) nx.children[i].querySelector("input").focus(); else document.querySelector("[data-qsave]").focus();
+});
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-qtab]"); if (t) { UI.qTab = t.dataset.qtab; rerender(); return; }
+  const a = e.target.closest("[data-trall]"); if (a) { e.preventDefault(); $$("[name=trp]").forEach(c => c.checked = a.dataset.trall === "1"); return; }
+  if (e.target.closest("[data-qcopy]")) {
+    let n = 0;
+    $$("tr[data-qp]").forEach(tr => { const prev = JSON.parse(tr.dataset.prev || "[]");
+      if (!prev.length || [0, 1, 2].some(i => tr.querySelector(`[name=k${i}]`).value.trim())) return;
+      [0, 1, 2].forEach(i => { tr.querySelector(`[name=f${i}]`).value = prev[i] ? prev[i].item : ""; tr.querySelector(`[name=k${i}]`).value = prev[i] ? prev[i].kg : ""; });
+      tr.querySelector("[data-tot]").textContent = nf.format(Math.round(prev.reduce((a, x) => a + x.kg, 0) * 100) / 100); tr.classList.add("chg"); n++; });
+    UI.dirty = true; $("#qmsg").textContent = n ? `Đã điền ${n} ao giống lần trước, anh/chị kiểm tra rồi bấm Lưu.` : "Không có ao trống nào để điền.";
+    return;
+  }
+  if (e.target.closest("[data-qsave]")) quickSave(e.target.closest("[data-qsave]"));
+});
+async function saveMany(d, changes){
+  const b = writeBatch(db), delta = {};
+  for (const [p, ch] of Object.entries(changes)) {
+    const ref = doc(db, "logs", p + "_" + d), snap = await getDoc(ref), old = snap.exists() ? snap.data() : {};
+    const feeds = ch.feeds || old.feeds || [], treats = ch.treats || old.treats || [];
+    const water = Object.assign({}, old.water || {}); if (ch.water) Object.entries(ch.water).forEach(([k, v]) => { if (v === null) delete water[k]; else water[k] = v; });
+    let notes = (old.note || "").split(" · ").filter(Boolean);
+    if (ch.noFeed !== undefined) { notes = notes.filter(x => x !== NO_FEED); if (ch.noFeed) notes.push(NO_FEED); }
+    if (ch.noteAdd && !notes.includes(ch.noteAdd)) notes.push(ch.noteAdd);
+    if (ch.feeds) { (old.feeds || []).forEach(f => delta[f.item] = (delta[f.item] || 0) - (f.kg || 0)); feeds.forEach(f => delta[f.item] = (delta[f.item] || 0) + f.kg); }
+    if (ch.treats) { (old.treats || []).forEach(x => delta[x.item] = (delta[x.item] || 0) - (x.qty || 0)); treats.forEach(x => delta[x.item] = (delta[x.item] || 0) + x.qty); }
+    b.set(ref, { pond:p, date:d, cycleId: old.cycleId || (S.ponds[p] && S.ponds[p].cycleId) || null, feeds, treats, water, note: notes.join(" · "),
+      feedTotal: Math.round(feeds.reduce((a, f) => a + f.kg, 0) * 100) / 100, by:S.email, at:serverTimestamp() });
+  }
+  Object.entries(delta).forEach(([it, v]) => { if (Math.abs(v) > 1e-9 && S.items[it]) b.update(doc(db, "stockItems", it), { qty: increment(-v) }); });
+  await b.commit();
+}
+async function quickSave(btn){
+  const d = UI.qDate, tab = UI.qTab || "feed", changes = {};
+  if (d > today()) return toast("Không nhập cho ngày tương lai.");
+  if (tab === "feed") {
+    for (const tr of $$("tr[data-qp]")) {
+      const p = tr.dataset.qp, g = n => tr.querySelector(`[name=${n}]`);
+      const nof = g("nofeed").checked;
+      const changed = String(+nof) !== g("nofeed").dataset.orig || [0, 1, 2].some(i => g("f" + i).value !== g("f" + i).dataset.orig || g("k" + i).value.trim() !== g("k" + i).dataset.orig);
+      if (!changed) continue;
+      const feeds = [];
+      for (const i of [0, 1, 2]) {
+        const it = g("f" + i).value, raw = g("k" + i).value.trim(), v = num(raw);
+        if (!raw) continue;
+        if (isNaN(v) || v < 0) return toast(`Ao ${p}: số kg thức ăn ${i + 1} không hợp lệ.`);
+        if (v === 0) continue;
+        if (!it) return toast(`Ao ${p}: có số kg ở cột ${i + 1} nhưng chưa chọn loại thức ăn.`);
+        if (feeds.some(f => f.item === it)) return toast(`Ao ${p}: loại thức ăn bị chọn trùng.`);
+        feeds.push({ item:it, kg:Math.round(v * 100) / 100 });
+      }
+      if (nof && feeds.length) return toast(`Ao ${p}: đã chọn “không cho ăn” nhưng vẫn có số kg.`);
+      changes[p] = { feeds, noFeed: nof };
+    }
+  } else if (tab === "tr") {
+    const it = $("#qtitem").value, q = num($("#qtqty").value), ps = $$("[name=trp]:checked").map(c => c.value), note = $("#qtnote").value.trim();
+    if (!it && !note) return toast("Chưa chọn sản phẩm.");
+    if (it && (isNaN(q) || q <= 0)) return toast("Chưa nhập liều.");
+    if (!ps.length) return toast("Chưa chọn ao nào.");
+    ps.forEach(p => { const l = S.logs[p + "_" + d] || {}; changes[p] = { noteAdd: note || undefined };
+      if (it) changes[p].treats = (l.treats || []).filter(x => x.item !== it).concat([{ item:it, qty:q }]); });
+  } else {
+    for (const tr of $$("tr[data-qw]")) {
+      const w = {}; let ch = false;
+      for (const inp of tr.querySelectorAll("input")) { const k = inp.name.slice(2), raw = inp.value.trim(); if (raw === inp.dataset.orig) continue;
+        ch = true; if (raw === "") { w[k] = null; continue; } const v = num(raw); if (isNaN(v)) return toast(`Ao ${tr.dataset.qw}: ${k} không phải là số.`); w[k] = v; }
+      if (ch) changes[tr.dataset.qw] = { water: w };
+    }
+  }
+  const n = Object.keys(changes).length; if (!n) return toast("Chưa có thay đổi nào để lưu.");
+  btn.disabled = true;
+  try {
+    await saveMany(d, changes);
+    toast(`Đã lưu ${n} ao ngày ${vnDate(d)}.`); UI.dirty = false;
+    rerender();
+  } catch (er) { console.error(er); toast(er.code === "permission-denied" ? "Không có quyền nhập cho một số ao." : "Lưu không được, kiểm tra mạng rồi thử lại."); btn.disabled = false; }
+}
 
 /* ===== Ao nuôi ===== */
 function activeCycle(p){ const id = S.ponds[p] && S.ponds[p].cycleId; return id && S.cycles[id] ? S.cycles[id] : null; }
