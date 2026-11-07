@@ -227,6 +227,18 @@ $("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-ta
 /* ===== Ao nuôi ===== */
 function activeCycle(p){ const id = S.ponds[p] && S.ponds[p].cycleId; return id && S.cycles[id] ? S.cycles[id] : null; }
 function lastWater(p){ const ls = Object.values(S.logs).filter(l => l.pond===p && l.water && Object.keys(l.water).length).sort((a,b)=>b.date.localeCompare(a.date)); return ls[0] || null; }
+// Một ngày được tính là "đã nhập lượng ăn" khi có thức ăn hoặc ghi rõ không cho ăn
+const NO_FEED = "Không cho ăn";
+function fedDay(p, d){ const l = S.logs[p + "_" + d]; return !!l && ((l.feedTotal || 0) > 0 || (l.feeds || []).length > 0 || (l.note || "").includes(NO_FEED)); }
+function missingDays(p){
+  const cy = activeCycle(p); if (!cy) return [];
+  const y = addDays(today(), -1); let d = cy.stockDate > addDays(y, -13) ? cy.stockDate : addDays(y, -13);
+  const out = []; for (; d <= y; d = addDays(d, 1)) if (!fedDay(p, d)) out.push(d);
+  return out;
+}
+function lastFed(p){ const ds = Object.values(S.logs).filter(l => l.pond === p && fedDay(p, l.date)).map(l => l.date).sort(); return ds.at(-1) || null; }
+const shortDate = d => vnDate(d).slice(0, 5);
+function missText(m){ return m.length === 1 ? shortDate(m[0]) : m.length <= 3 ? m.map(shortDate).join(", ") : `${m.length} ngày (${shortDate(m[0])} → ${shortDate(m.at(-1))})`; }
 function waterAlerts(w){ return WATER.filter(f => f.bad && w && w[f.k] != null && f.bad(w[f.k])).map(f => f.n.split(" ")[0]); }
 
 function vAo(){
@@ -238,16 +250,21 @@ function vAo(){
   const t = today();
   const card = p => {
     const cy = activeCycle(p), lw = lastWater(p), al = lw ? waterAlerts(lw.water) : [];
-    const done = !!S.logs[p + "_" + t];
-    const cls = al.length ? "alert" : cy && !done ? "todo" : cy ? "on" : "";
+    const done = fedDay(p, t), miss = missingDays(p), lf = lastFed(p);
+    const cls = al.length ? "alert" : cy && miss.length ? "todo" : cy ? "on" : "";
     return `<button class="pond ${cls}" data-pond="${p}">
       <span style="display:flex;justify-content:space-between;align-items:center"><b>${esc(p)}</b>${cy ? `<span class="chip g">DOC ${daysBetween(cy.stockDate, t)}</span>` : `<span class="chip">Trống</span>`}</span>
       <span class="small mut">${esc(userName(S.ponds[p].owner))}</span>
-      <span class="small">${cy ? (done ? `<span class="ok">✓ Đã nhập hôm nay</span>` : `<span class="warn">Chưa nhập hôm nay</span>`) : "&nbsp;"}</span>
+      ${cy ? `<span class="small mut">Đã nhập đến: <b style="color:var(--ink)">${lf ? shortDate(lf) : "–"}</b></span>
+      <span class="small">${miss.length ? `<span class="warn">Thiếu: ${missText(miss)}</span>` : done ? `<span class="ok">✓ Đã nhập hôm nay</span>` : `<span class="ok">✓ Đủ đến hôm qua</span>`}</span>` : `<span class="small">&nbsp;</span>`}
       ${al.length ? `<span class="small bad">⚠ ${esc(al.join(", "))}</span>` : ""}
     </button>`;
   };
+  const missAll = {}; mine.forEach(p => missingDays(p).forEach(d => (missAll[d] ||= []).push(p)));
+  const mDates = Object.keys(missAll).sort();
   return `<h2>${can.allPonds() ? "Tất cả ao" : "Ao anh/chị phụ trách"}</h2>
+    ${mDates.length ? `<div class="banner"><b>Còn thiếu lượng ăn:</b><br>${mDates.map(d => `${vnDate(d)}: ${missAll[d].length === mine.filter(activeCycle).length ? `tất cả ${missAll[d].length} ao` : esc(missAll[d].join(", "))}`).join("<br>")}</div>`
+      : mine.some(activeCycle) ? `<div class="banner okb">✓ Đã đủ lượng ăn đến hết hôm qua (${vnDate(addDays(today(),-1))}).</div>` : ""}
     <div class="grid">${mine.map(card).join("")}</div>
     <p class="small mut">Bấm vào ao để nhập lượng ăn, xử lý, chỉ số môi trường.</p>`;
 }
@@ -271,6 +288,7 @@ function vPondForm(p){
   <h2>Ao ${esc(p)} ${cy ? `<span class="chip g">Đang nuôi · DOC ${daysBetween(cy.stockDate, today())}</span>` : `<span class="chip">Chưa có vụ</span>`}</h2>
   <div class="small mut">Phụ trách: ${esc(userName(S.ponds[p] && S.ponds[p].owner))}${cy ? ` · Thả ${vnDate(cy.stockDate)} · ${fmt(cy.stockCount)} con` : ""}</div>
   ${!edit ? `<div class="banner">Anh/chị chỉ được xem ao này.</div>` : ""}
+  ${(() => { const m = missingDays(p); return m.length ? `<div class="banner">Ao này còn thiếu lượng ăn: ${m.map(d => `<a href="#" data-day="${d}">${shortDate(d)}</a>`).join(", ")} <span class="small">(bấm vào ngày để nhập)</span></div>` : ""; })()}
   ${!cy && edit ? `<div class="banner">Ao chưa bắt đầu vụ. Vẫn nhập được, nhưng nên nhờ Kỹ thuật “Bắt đầu vụ” trước.</div>` : ""}
   <div class="panel">
     <div class="f2"><div><label>Ngày</label><input type="date" id="ldate" value="${UI.date}" max="${today()}"></div></div>
@@ -278,6 +296,7 @@ function vPondForm(p){
     <h3>Lượng ăn (kg)</h3>
     <div id="frows">${feeds.map(f => feedRow(f.item, f.kg)).join("")}</div>
     ${edit ? `<button class="btn s" data-add="feed">+ Thêm loại thức ăn</button>` : ""}
+    <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:500;color:var(--ink)"><input type="checkbox" id="nofeed" style="width:auto" ${(log.note||"").includes(NO_FEED) ? "checked" : ""} ${ro}> Ngày này không cho ăn</label>
     <h3>Xử lý (vi sinh, khoáng, hóa chất)</h3>
     <div id="trows">${treats.map(t => trRow(t.item, t.qty)).join("")}</div>
     ${edit ? `<button class="btn s" data-add="tr">+ Thêm sản phẩm</button>` : ""}
@@ -316,7 +335,11 @@ async function saveLog(btn){
     if (!it && isNaN(v)) continue; if (!it || isNaN(v) || v < 0) return toast("Dòng xử lý chưa đủ sản phẩm hoặc lượng."); treats.push({ item:it, qty:v }); }
   const water = {};
   for (const f of WATER) { const raw = $(`[name=w_${f.k}]`).value; if (raw.trim() === "") continue; const v = num(raw); if (isNaN(v)) return toast(`${f.n} không phải là số.`); water[f.k] = v; }
-  const note = $("#lnote").value.trim();
+  let note = $("#lnote").value.trim();
+  const noFeed = $("#nofeed").checked;
+  if (noFeed && feeds.length) return toast("Đã chọn “không cho ăn” nhưng vẫn có dòng thức ăn.");
+  note = note.split(" · ").filter(x => x && x !== NO_FEED).join(" · ");
+  if (noFeed) note = note ? note + " · " + NO_FEED : NO_FEED;
   if (!feeds.length && !treats.length && !Object.keys(water).length && !note) return toast("Chưa có số liệu nào để lưu.");
   btn.disabled = true;
   try {
