@@ -48,15 +48,15 @@ img{max-width:100%;height:auto;display:block}
 .lang{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
 .lang button{border:0;background:none;font:inherit;font-size:13px;font-weight:700;padding:6px 11px;color:var(--mut);cursor:pointer}
 .lang button[aria-pressed="true"]{background:var(--estuary);color:#fff}
-.login{font-size:14px;font-weight:600;text-decoration:none;color:var(--estuary);border:1px solid var(--estuary);border-radius:8px;padding:7px 12px;white-space:nowrap}
-.login:hover{background:var(--estuary);color:#fff}
+.login{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:700;text-decoration:none;color:#fff;background:var(--estuary);border-radius:9px;padding:9px 14px;white-space:nowrap}
+.login:hover{background:var(--deep)}
 .burger{display:none;border:0;background:none;padding:8px;cursor:pointer;color:var(--estuary)}
 @media (max-width:1180px){
   .burger{display:block}
   .menu{display:none;position:absolute;top:68px;left:0;right:0;flex-direction:column;background:#fff;border-bottom:1px solid var(--line);padding:8px 16px 14px}
   .menu.open{display:flex}
   .menu a{padding:12px}
-  .login{display:none}
+  .login span{display:none}.login{padding:9px 10px}
   .menu .m-login{display:block}
 }
 .menu .m-login{display:none}
@@ -156,6 +156,15 @@ section.block.alt{background:var(--paper)}
 .price .meta{padding:12px 14px;font-size:14px;color:var(--mut)}
 .empty{color:var(--mut);background:var(--paper);border:1px dashed var(--line);border-radius:16px;padding:22px}
 
+/* khu vực nội bộ */
+.staff{background:linear-gradient(120deg,#0b6870,#0a8a93 60%,#2a9d5c);color:#fff;padding:56px 0}
+.staff .wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:32px;align-items:center}
+.staff h2{margin:0 0 8px;font-size:clamp(24px,2.6vw,32px);letter-spacing:-.02em}
+.staff p{margin:0 0 14px;color:#e2f7f2;max-width:60ch}
+.staff ul{margin:0;padding-left:20px;color:#e2f7f2;display:grid;gap:4px;font-size:15.5px}
+.staff-btn{display:inline-flex;align-items:center;gap:10px;background:#fff;color:var(--deep);text-decoration:none;font-weight:800;font-size:17px;padding:16px 24px;border-radius:12px;box-shadow:0 12px 28px -12px rgba(0,0,0,.35);white-space:nowrap}
+.staff-btn:hover{background:var(--mist)}
+@media (max-width:760px){.staff .wrap{grid-template-columns:1fr}.staff-btn{justify-content:center}}
 /* liên hệ + chân trang */
 .contact{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
 .contact div{background:var(--paper);border-radius:14px;padding:22px;border:1px solid var(--line)}
@@ -184,7 +193,7 @@ footer a{color:#fff}
       <li class="m-login"><a href="nhap-lieu/" data-i18n="nav.login">Đăng nhập nhân viên</a></li>
     </ul>
     <div class="lang" role="group" aria-label="Ngôn ngữ"><button data-lang="vi" aria-pressed="true">VI</button><button data-lang="en" aria-pressed="false">EN</button></div>
-    <a class="login" href="nhap-lieu/" data-i18n="nav.login">Đăng nhập nhân viên</a>
+    <a class="login" href="nhap-lieu/" aria-label="Đăng nhập nhân viên"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span data-i18n="nav.login">Đăng nhập nhân viên</span></a>
   </div>
 </nav>
 
@@ -330,6 +339,22 @@ footer a{color:#fff}
   <div class="wrap"><div class="head"><h2 data-i18n="nw.title">Tin tức và hoạt động</h2></div><div id="news"></div></div>
 </section>
 
+<section class="staff" aria-labelledby="staff-t">
+  <div class="wrap">
+    <div>
+      <h2 id="staff-t" data-i18n="sf.title">Khu vực nội bộ cho nhân viên</h2>
+      <p data-i18n="sf.lead">Đăng nhập bằng Gmail đã được cấp quyền. Hệ thống nhận diện từng nhân viên và chỉ mở đúng phần việc của người đó.</p>
+      <ul>
+        <li data-i18n="sf.l1">Phụ trách ao: nhập thức ăn, xử lý, chỉ số môi trường cho ao được giao</li>
+        <li data-i18n="sf.l2">Thủ kho: nhập, xuất, kiểm kê kho</li>
+        <li data-i18n="sf.l3">Kế toán: thu – chi, giá tôm</li>
+        <li data-i18n="sf.l4">Kỹ thuật, quản lý: tổng quan, vụ nuôi, xét nghiệm, phân quyền</li>
+      </ul>
+    </div>
+    <a class="staff-btn" href="nhap-lieu/"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span data-i18n="sf.btn">Đăng nhập khu vực nội bộ</span></a>
+  </div>
+</section>
+
 <section class="block" id="lien-he">
   <div class="wrap">
     <div class="head"><h2 data-i18n="ct.title">Liên hệ</h2><p data-i18n="ct.lead">Đối tác, khách hàng và đơn vị muốn tham quan trang trại vui lòng liên hệ trước để được sắp xếp.</p></div>
@@ -395,6 +420,8 @@ const T = {
     "pz.title":"Reference shrimp prices","pz.lead":"Farm-gate prices for whiteleg shrimp in the region, updated weekly with sources. These are market reference prices, not the farm's selling prices.","pz.empty":"This week's price table is being updated.",
     "pz.size":"Size (pcs/kg)","pz.price":"Price (VND/kg)","pz.src":"Source","pz.date":"Updated",
     "nw.title":"News and activities",
+    "sf.title":"Staff area","sf.lead":"Sign in with an authorised Gmail account. The system recognises each staff member and opens only the work assigned to them.",
+    "sf.l1":"Pond caretakers: feed, treatments and water readings for their assigned ponds","sf.l2":"Storekeeper: stock in, stock out and stock counts","sf.l3":"Accounting: income, expenses and shrimp prices","sf.l4":"Technical team and managers: overview, crops, lab tests and user permissions","sf.btn":"Sign in to the staff area",
     "ct.title":"Contact","ct.lead":"Partners, customers and organisations who wish to visit the farm, please contact us in advance.",
     "ct.addr":"Address","ct.addrv":"Ganh Hao commune, Ca Mau province","ct.phone":"Phone","ct.soon":"Coming soon","ct.need":"to be provided",
     "ft.map":"Farm map"
