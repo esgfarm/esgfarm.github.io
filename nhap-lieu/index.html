@@ -240,12 +240,12 @@ function renderLogin(){
   $("#tabs").hidden = true; document.body.classList.remove("side");
   $("#main").innerHTML = `<div class="login"><div class="panel">
     <h2>Đăng nhập nhập liệu</h2>
-    <p class="mut">Dùng Gmail đã được anh Hùng cấp quyền.</p>
+    <p class="mut">Dùng Gmail đã được anh Hùng cấp quyền. Bấm nút bên dưới, Google sẽ cho chọn tài khoản; tài khoản chưa có trong danh sách thì chọn <b>“Sử dụng một tài khoản khác”</b>.</p>
     <button class="btn p" id="gsign" style="width:100%;padding:12px">Đăng nhập bằng Google</button>
     <p class="small mut" style="margin-top:14px">Trang giới thiệu trang trại: <a href="../">esgfarm.github.io</a></p>
   </div></div>`;
   $("#gsign").onclick = async () => {
-    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    try { const gp = new GoogleAuthProvider(); gp.setCustomParameters({ prompt: "select_account" }); await signInWithPopup(auth, gp); }
     catch (e) { console.error(e); toast(e.code === "auth/unauthorized-domain" ? "Tên miền chưa được thêm vào Firebase (Authorized domains)." : e.code === "auth/popup-blocked" ? "Trình duyệt chặn cửa sổ đăng nhập, anh cho phép popup rồi thử lại." : "Đăng nhập không được: " + (e.code || e.message)); }
   };
 }
