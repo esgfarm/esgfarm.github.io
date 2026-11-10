@@ -511,7 +511,7 @@ function vHome(){
   const latestPcr = {}; S.tests.forEach(x => { if (x.type !== "pcr") return; const k = x.pond + "|" + x.target; if (!latestPcr[k] || latestPcr[k].date < x.date) latestPcr[k] = x; });
   const pcrPos = Object.values(latestPcr).filter(x => x.result === "pos" && activeCycle(x.pond) && activeCycle(x.pond).id === x.cycleId);
   const usedRecently = new Set(); Object.values(S.logs).filter(l => l.date >= addDays(t, -14)).forEach(l => { (l.feeds||[]).forEach(f => usedRecently.add(f.item)); (l.treats||[]).forEach(x => usedRecently.add(x.item)); });
-  const low = Object.entries(S.items).filter(([id, v]) => ((v.qty || 0) < 0) || (["thuc_an","khoang"].includes(v.group) && (v.qty || 0) < LOW_FEED_KG && (usedRecently.has(id) || (v.qty || 0) > 0)));
+  const low = Object.entries(S.items).filter(([id, v]) => !v.noStock).filter(([id, v]) => ((v.qty || 0) < 0) || (["thuc_an","khoang"].includes(v.group) && (v.qty || 0) < LOW_FEED_KG && (usedRecently.has(id) || (v.qty || 0) > 0)));
   const missAll = {}; act.forEach(p => missingDays(p).forEach(d => (missAll[d] ||= []).push(p)));
   const noOwner = act.filter(p => !S.ponds[p].owner);
   // Việc cần xử lý
@@ -749,7 +749,7 @@ async function saveMany(d, changes){
     b.set(ref, { pond:p, date:d, cycleId: old.cycleId || (S.ponds[p] && S.ponds[p].cycleId) || null, feeds, treats, water, note: notes.join(" · "),
       feedTotal: Math.round(feeds.reduce((a, f) => a + f.kg, 0) * 100) / 100, by:S.email, at:serverTimestamp() });
   }
-  Object.entries(delta).forEach(([it, v]) => { if (Math.abs(v) > 1e-9 && S.items[it]) b.update(doc(db, "stockItems", it), { qty: increment(-v) }); });
+  Object.entries(delta).forEach(([it, v]) => { if (Math.abs(v) > 1e-9 && S.items[it] && !S.items[it].noStock) b.update(doc(db, "stockItems", it), { qty: increment(-v) }); });
   await b.commit();
 }
 async function quickSave(btn){
@@ -927,7 +927,7 @@ async function saveLog(btn){
     const b = writeBatch(db);
     b.set(ref, { pond:p, date:d, cycleId:(S.ponds[p] && S.ponds[p].cycleId) || null, feeds, treats, water, note,
       feedTotal: feeds.reduce((a,f)=>a+f.kg,0), by:S.email, at:serverTimestamp() });
-    Object.entries(delta).forEach(([it, v]) => { if (Math.abs(v) > 1e-9 && S.items[it]) b.update(doc(db,"stockItems",it), { qty: increment(-v) }); });
+    Object.entries(delta).forEach(([it, v]) => { if (Math.abs(v) > 1e-9 && S.items[it] && !S.items[it].noStock) b.update(doc(db,"stockItems",it), { qty: increment(-v) }); });
     await b.commit();
     const al = waterAlerts(water);
     toast(al.length ? `Đã lưu. ⚠ Cảnh báo: ${al.join(", ")}` : "Đã lưu số liệu ao " + p);
@@ -1193,13 +1193,13 @@ function vKho(){
   return `<h2>Kho</h2>
   ${!items.length ? `<div class="banner">Chưa có danh mục hàng trong kho.${can.admin() ? " Vào tab Quản lý bấm “Tạo danh mục thức ăn mặc định”, hoặc thêm hàng bên dưới." : ""}</div>` : ""}
   <div class="tw"><table><tr><th>Hàng</th><th>Nhóm</th><th class="r">Tồn</th><th>ĐVT</th><th class="r">Giá nhập gần nhất</th></tr>
-  ${items.map(([id,v]) => { const low = v.group==="thuc_an" && (v.qty||0) < LOW_FEED_KG; return `<tr><td>${esc(v.name)}</td><td class="small">${GROUPS[v.group]||"–"}</td>
-    <td class="r num ${low||(v.qty||0)<0?"bad":""}"><b>${fmt(v.qty||0)}</b>${low?" ⚠":""}</td><td>${esc(v.unit||"")}</td><td class="r num">${v.price?money(v.price):"–"}</td></tr>`; }).join("")}</table></div>
-  <p class="small mut">⚠ = thức ăn dưới ${LOW_FEED_KG} kg. Tồn kho tự trừ khi người phụ trách ao lưu lượng ăn / xử lý.</p>
+  ${items.map(([id,v]) => { const low = !v.noStock && v.group==="thuc_an" && (v.qty||0) < LOW_FEED_KG; return `<tr><td>${esc(v.name)}</td><td class="small">${GROUPS[v.group]||"–"}</td>
+    <td class="r num ${!v.noStock&&(low||(v.qty||0)<0)?"bad":""}">${v.noStock ? `<span class="small mut">Không lưu kho · dùng trong ngày</span>` : `<b>${fmt(v.qty||0)}</b>${low?" ⚠":""}`}</td><td>${esc(v.unit||"")}</td><td class="r num">${v.price?money(v.price):"–"}</td></tr>`; }).join("")}</table></div>
+  <p class="small mut">⚠ = thức ăn dưới ${LOW_FEED_KG} kg. Tồn kho tự trừ khi người phụ trách ao lưu lượng ăn / xử lý. Hàng ghi “Không lưu kho” (sản xuất tại trại, dùng trong ngày) không bị trừ tồn.</p>
   ${edit && items.length ? `<div class="panel"><h3 style="margin-top:0">Nhập / xuất / kiểm kê</h3>
     <div class="f2">
       <div><label>Loại</label><select id="mtype"><option value="in">Nhập kho</option><option value="out">Xuất kho (khác cho ao)</option><option value="adj">Kiểm kê (nhập số tồn thực tế)</option></select></div>
-      <div><label>Hàng</label><select id="mitem">${itemOptions("", "")}</select></div>
+      <div><label>Hàng</label><select id="mitem">${itemOptions("", "").replace(/<option value="([^"]+)"[^>]*>[^<]*<\/option>/g, (m, id) => S.items[id] && S.items[id].noStock ? "" : m)}</select></div>
       <div><label id="mqlbl">Số lượng</label><input id="mqty" inputmode="decimal"></div>
       <div><label>Ngày</label><input type="date" id="mdate" value="${today()}" max="${today()}"></div>
       <div><label>Đơn giá nhập (đ, nếu có)</label><input id="mprice" inputmode="numeric"></div>
@@ -1436,7 +1436,7 @@ async function exportExcel(btn){
       "Chi tiết thức ăn":(l.feeds||[]).map(f=>`${itemName(f.item)}: ${f.kg}`).join("; "),
       "Xử lý":(l.treats||[]).map(t=>`${itemName(t.item)}: ${t.qty} ${itemUnit(t.item)}`).join("; ") },
       Object.fromEntries(WATER.map(f => [f.n, l.water && l.water[f.k] != null ? l.water[f.k] : ""])), { "Ghi chú":l.note||"", "Người nhập":userName(l.by) })));
-    add("Tồn kho", Object.values(S.items).map(v => ({ "Hàng":v.name, "Nhóm":GROUPS[v.group]||"", "Tồn":v.qty||0, "ĐVT":v.unit||"", "Giá nhập gần nhất":v.price||"" })));
+    add("Tồn kho", Object.values(S.items).map(v => ({ "Hàng":v.name, "Nhóm":GROUPS[v.group]||"", "Tồn":v.noStock ? "Không lưu kho" : (v.qty||0), "ĐVT":v.unit||"", "Giá nhập gần nhất":v.price||"" })));
     add("Phiếu kho", moves.sort((a,b)=>a.date.localeCompare(b.date)).map(m => ({ "Ngày":vnDate(m.date), "Loại":{in:"Nhập",out:"Xuất",adj:"Kiểm kê"}[m.type]||m.type, "Hàng":itemName(m.item), "Lượng":m.qty, "Đơn giá":m.price||"", "Ghi chú":m.note||"", "Người nhập":userName(m.by) })));
     add("Thu chi", fin.sort((a,b)=>a.date.localeCompare(b.date)).map(f => ({ "Ngày":vnDate(f.date), "Loại":f.type==="thu"?"Thu":"Chi", "Hạng mục":f.cat, "Ao":f.pond||"Chung", "Số tiền":f.amount, "Ghi chú":f.note||"", "Người nhập":userName(f.by) })));
     add("Vụ nuôi", cycles.sort((a,b)=>a.stockDate.localeCompare(b.stockDate)).map(c => ({ "Ao":c.pond, "Ngày thả":vnDate(c.stockDate), "Số con thả":c.stockCount, "Trạng thái":c.status==="done"?"Đã kết thúc":"Đang nuôi", "Ngày kết thúc":vnDate(c.endDate), "Ghi chú":c.note||"" })));
