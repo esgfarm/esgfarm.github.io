@@ -45,21 +45,23 @@ img{max-width:100%;height:auto;display:block}
 .menu{display:flex;gap:4px;list-style:none;margin:0;padding:0}
 .menu a{display:block;text-decoration:none;font-size:15px;font-weight:600;color:var(--mut);padding:8px 10px;border-radius:8px;white-space:nowrap}
 .menu a:hover{color:var(--estuary);background:var(--mist)}
-.lang{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.nav .wrap{max-width:1280px}
+.lang{flex:none;display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
 .lang button{border:0;background:none;font:inherit;font-size:13px;font-weight:700;padding:6px 11px;color:var(--mut);cursor:pointer}
 .lang button[aria-pressed="true"]{background:var(--estuary);color:#fff}
 .login{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:700;text-decoration:none;color:#fff;background:var(--estuary);border-radius:9px;padding:9px 14px;white-space:nowrap}
 .login:hover{background:var(--deep)}
 .burger{display:none;border:0;background:none;padding:8px;cursor:pointer;color:var(--estuary)}
-@media (max-width:1180px){
+@media (max-width:1260px){
   .burger{display:block}
   .menu{display:none;position:absolute;top:68px;left:0;right:0;flex-direction:column;background:#fff;border-bottom:1px solid var(--line);padding:8px 16px 14px}
   .menu.open{display:flex}
   .menu a{padding:12px}
   .login span{display:none}.login{padding:9px 10px}
-  .menu .m-login{display:block}
+  .menu .m-login,.menu .m-only{display:block}
 }
-.menu .m-login{display:none}
+.menu .m-login,.menu .m-only{display:none}
+@media (max-width:480px){.nav .wrap{gap:8px}.logo b{font-size:16px}.logo span{font-size:12px}.burger{padding:6px}.lang button{padding:6px 9px}}
 
 /* ---------- Đầu trang: chuỗi xử lý nước là hình ảnh chính ---------- */
 .hero{background:radial-gradient(1200px 520px at 85% 10%,#d9f6ef 0%,rgba(217,246,239,0) 60%),radial-gradient(900px 500px at 0% 100%,#fff3cf 0%,rgba(255,243,207,0) 55%),#ffffff;color:var(--ink);position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
@@ -174,6 +176,46 @@ section.block.alt{background:var(--paper)}
 footer{background:var(--deep);color:#d6f1ec;padding:36px 0;font-size:14.5px}
 footer .wrap{display:flex;gap:24px;flex-wrap:wrap;justify-content:space-between;align-items:center}
 footer a{color:#fff}
+/* tầm nhìn */
+.vision{background:linear-gradient(180deg,#e3f6f1 0%,#ffffff 70%)}
+.mission{font-size:clamp(20px,2.2vw,26px);line-height:1.5;font-weight:600;color:#0b5f66;max-width:52ch;margin:0 0 40px;border-left:5px solid var(--signal);padding-left:22px}
+.tag{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a5a00;background:#fff1c7;border-radius:999px;padding:3px 10px;margin-bottom:12px}
+.goals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:56px}
+.goals div{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 20px}
+.goals b{display:block;font-size:clamp(28px,3vw,38px);font-weight:800;letter-spacing:-.02em;color:var(--estuary);font-variant-numeric:tabular-nums;line-height:1.1}
+.goals span{display:block;color:var(--mut);font-size:15px;margin-top:6px}
+.goals .arrow{background:linear-gradient(135deg,#0a8a93,#2a9d5c);border:0}
+.goals .arrow b,.goals .arrow span{color:#fff}
+@media (max-width:900px){.goals{grid-template-columns:1fr 1fr}}
+.values{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+.values article{background:#fff;border:1px solid var(--line);border-top:4px solid var(--brackish);border-radius:14px;padding:20px 18px}
+.values h3{margin:0 0 6px;font-size:18px;color:var(--estuary)}
+.values p{margin:0;color:var(--mut);font-size:15px}
+@media (max-width:1000px){.values{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.values{grid-template-columns:1fr}}
+h3.sub{font-size:24px;letter-spacing:-.01em;color:var(--estuary);margin:0 0 18px}
+/* công nghệ ShrimpVet */
+.tech{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:40px;align-items:center;margin-top:64px}
+.tech ul{list-style:none;margin:0;padding:0;display:grid;gap:18px}
+.tech li b{display:block;color:var(--ink);font-size:17px}
+.tech li span{color:var(--mut);font-size:15.5px}
+.tech li{padding-left:18px;border-left:3px solid var(--brackish)}
+@media (max-width:900px){.tech{grid-template-columns:1fr;gap:24px}}
+/* tuần hoàn */
+.circ{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;margin-top:56px;align-items:start}
+.circ ul{margin:0;padding-left:20px;color:var(--mut);display:grid;gap:8px}
+.circ ul b{color:var(--ink)}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:28px}
+.trio .photo img{aspect-ratio:4/3}
+@media (max-width:900px){.circ{grid-template-columns:1fr;gap:24px}}
+@media (max-width:640px){.trio{grid-template-columns:1fr}}
+/* cộng đồng */
+.comm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:28px}
+.comm article{background:var(--mist);border-radius:16px;padding:24px}
+.comm h3{margin:0 0 8px;font-size:19px;color:var(--mangrove)}
+.comm p{margin:0;color:var(--mut);font-size:15.5px}
+@media (max-width:900px){.comm{grid-template-columns:1fr}}
+.note{font-size:14px;color:var(--mut);margin-top:18px}
 .pending{display:inline-block;font-size:12.5px;color:#8a6d00;background:#fff4cc;border-radius:6px;padding:1px 7px;margin-left:6px}
 </style>
 </head>
@@ -184,8 +226,9 @@ footer a{color:#fff}
     <a class="logo" href="#top"><b>ShrimpVet ESG Farm</b><span data-i18n="tagline">Gành Hào · Cà Mau</span></a>
     <button class="burger" aria-label="Mở menu" aria-expanded="false" id="burger"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <ul class="menu" id="menu">
-      <li><a href="#top" data-i18n="nav.home">Trang chủ</a></li>
+      <li class="m-only"><a href="#top" data-i18n="nav.home">Trang chủ</a></li>
       <li><a href="#gioi-thieu" data-i18n="nav.about">Giới thiệu</a></li>
+      <li><a href="#tam-nhin" data-i18n="nav.vision">Tầm nhìn</a></li>
       <li><a href="#quy-trinh" data-i18n="nav.process">Quy trình & Công nghệ</a></li>
       <li><a href="#ben-vung" data-i18n="nav.esg">Phát triển bền vững</a></li>
       <li id="nav-news" hidden><a href="#tin-tuc" data-i18n="nav.news">Tin tức</a></li>
@@ -247,6 +290,28 @@ footer a{color:#fff}
   </div>
 </section>
 
+<section class="block vision" id="tam-nhin">
+  <div class="wrap">
+    <div class="head" style="margin-bottom:24px"><h2 data-i18n="vs.title">Tầm nhìn và sứ mệnh</h2></div>
+    <p class="mission" data-i18n="vs.mission">Phát triển mô hình nuôi tôm có thể mở rộng và chuyển giao cho thế hệ nhà sản xuất tôm tiếp theo: bền vững, hiệu quả và cạnh tranh toàn cầu.</p>
+    <span class="tag" data-i18n="vs.tag">Mục tiêu đến năm 2030</span>
+    <div class="goals">
+      <div><b>50</b><span data-i18n="vs.g1">đơn vị nuôi theo mô-đun</span></div>
+      <div><b data-i18n="vs.g2v">2.000 tấn</b><span data-i18n="vs.g2">sản lượng mỗi đơn vị</span></div>
+      <div><b data-i18n="vs.g3v">100.000 tấn</b><span data-i18n="vs.g3">tôm bền vững từ hệ thống mô-đun</span></div>
+      <div class="arrow"><b data-i18n="vs.g4v">1 triệu tấn</b><span data-i18n="vs.g4">khi chuyển giao mô hình cho 500 trang trại</span></div>
+    </div>
+    <h3 class="sub" data-i18n="vs.vtitle">Giá trị cốt lõi</h3>
+    <div class="values">
+      <article><h3 data-i18n="vs.v1">Chất lượng</h3><p data-i18n="vs.v1d">Không kháng sinh, không cắt mắt tôm bố mẹ, hướng tới không xả thải.</p></article>
+      <article><h3 data-i18n="vs.v2">Truy xuất</h3><p data-i18n="vs.v2d">Minh bạch toàn chuỗi, từ đàn tôm bố mẹ đến sản phẩm cuối cùng.</p></article>
+      <article><h3 data-i18n="vs.v3">Tuân thủ</h3><p data-i18n="vs.v3d">Hướng tới chứng nhận ASC, BAP và các tiêu chuẩn quốc tế.</p></article>
+      <article><h3 data-i18n="vs.v4">Bền vững</h3><p data-i18n="vs.v4d">Giảm phát thải carbon, phục hồi rừng ngập mặn, tuần hoàn khép kín.</p></article>
+      <article><h3 data-i18n="vs.v5">Số hóa</h3><p data-i18n="vs.v5d">Số hóa chuỗi sản xuất từ trại giống đến vùng nuôi, để truy xuất nguồn gốc đến từng ao.</p></article>
+    </div>
+  </div>
+</section>
+
 <section class="block" id="quy-trinh">
   <div class="wrap">
     <div class="head">
@@ -283,6 +348,18 @@ footer a{color:#fff}
       <p data-i18n="pr.map">Mỗi ao nuôi có một mã QR riêng. Khách tham quan quét mã tại ao để xem hồ sơ nuôi: tăng trưởng, thức ăn, chất lượng nước và kết quả xét nghiệm.</p>
       <a href="so-do/" data-i18n="pr.maplink">Xem sơ đồ trang trại</a>
     </div>
+    <div class="tech">
+      <div>
+        <h3 class="sub" data-i18n="tc.title">Nuôi tôm dựa trên khoa học</h3>
+        <ul>
+          <li><b data-i18n="tc.l1">Tích hợp dọc</b><span data-i18n="tc.l1d">Con giống từ trại giống ShrimpVet, vi khuẩn quang hợp được sản xuất ngay tại trang trại, phụ gia có lợi của ShrimpVet được tích hợp vào thức ăn.</span></li>
+          <li><b data-i18n="tc.l2">Không kháng sinh tuyệt đối</b><span data-i18n="tc.l2d">Chỉ dùng đầu vào đã được kiểm định; tôm được kiểm tra dư lượng kháng sinh, gen kháng thuốc và hệ vi sinh (metagenomics).</span></li>
+          <li><b data-i18n="tc.l3">Phúc lợi động vật</b><span data-i18n="tc.l3d">Chỉ sử dụng đàn tôm bố mẹ không cắt mắt, kiểm soát chất lượng ở mọi giai đoạn.</span></li>
+          <li><b data-i18n="tc.l4">Số hóa và tự động hóa</b><span data-i18n="tc.l4d">Số liệu từng ao được ghi trên hệ thống số; từng bước ứng dụng cảm biến và tự động hóa trong vận hành.</span></li>
+        </ul>
+      </div>
+      <figure class="photo"><img src="assets/vi-sinh.jpg" alt="" data-i18n-alt="img.psb" loading="lazy" width="1600" height="503" style="aspect-ratio:16/7"><figcaption data-i18n="tc.capt">Vi khuẩn quang hợp được nhân sinh khối tại trang trại</figcaption></figure>
+    </div>
   </div>
 </section>
 
@@ -306,6 +383,25 @@ footer a{color:#fff}
       <article><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2f6b4f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V11"/><path d="M12 11C12 7 9 4 5 4c0 4 3 7 7 7zM12 13c0-3 2.5-5.5 6-5.5 0 3.5-2.5 6-6 6z"/></svg>
         <div><h3 data-i18n="es.p4">Hệ sinh thái xanh</h3><p data-i18n="es.p4d">Duy trì và phát triển thảm thực vật ven khu vực trang trại, hướng đến bảo vệ môi trường tự nhiên.</p></div></article>
     </div>
+    <div class="circ">
+      <div>
+        <span class="tag" data-i18n="ci.tag">Mục tiêu</span>
+        <h3 class="sub" data-i18n="ci.title">Kinh tế tuần hoàn, dấu chân carbon thấp</h3>
+        <p style="margin:0;color:var(--mut)" data-i18n="ci.lead">Mô hình ESG hướng tới một hệ thống khép kín, trong đó chất thải của khâu này trở thành nguồn lực cho khâu khác.</p>
+      </div>
+      <ul>
+        <li><b data-i18n="ci.l1">Nuôi đa tầng:</b> <span data-i18n="ci.l1d">tôm kết hợp cá rô phi, cá thỏ, nhuyễn thể, rong biển và rừng ngập mặn.</span></li>
+        <li><b data-i18n="ci.l2">Tận dụng chất thải:</b> <span data-i18n="ci.l2d">phân, thức ăn thừa và chất hữu cơ được sử dụng lại trong hệ thống.</span></li>
+        <li><b data-i18n="ci.l3">Phục hồi rừng ngập mặn</b> <span data-i18n="ci.l3d">trên 30% diện tích trang trại.</span></li>
+        <li><b data-i18n="ci.l4">Năng lượng mặt trời</b> <span data-i18n="ci.l4d">cho vận hành trang trại.</span></li>
+        <li><b data-i18n="ci.l5">Giảm 70% dấu chân carbon</b> <span data-i18n="ci.l5d">so với cách nuôi thông thường, không xả thải ra môi trường.</span></li>
+      </ul>
+    </div>
+    <div class="trio">
+      <figure class="photo"><img src="assets/be-thuc-vat.jpg" alt="" data-i18n-alt="img.raft" loading="lazy" width="1496" height="921"><figcaption data-i18n="ci.c1">Khung trồng thực vật trên mặt nước ao</figcaption></figure>
+      <figure class="photo"><img src="assets/bo-sung-vi-sinh.jpg" alt="" data-i18n-alt="img.dose" loading="lazy" width="1511" height="1021"><figcaption data-i18n="ci.c2">Bổ sung vi sinh vào ao</figcaption></figure>
+      <figure class="photo"><img src="assets/ao-sen.jpg" alt="" data-i18n-alt="img.lotus" loading="lazy" width="1529" height="948"><figcaption data-i18n="ci.c3">Ao sen cạnh khu nhà của trang trại</figcaption></figure>
+    </div>
   </div>
 </section>
 
@@ -325,7 +421,25 @@ footer a{color:#fff}
   </div>
 </section>
 
-<section class="block alt" id="gia-tom">
+<section class="block alt" id="cong-dong">
+  <div class="wrap">
+    <div class="about">
+      <div>
+        <span class="tag" data-i18n="cm.tag">Định hướng phát triển</span>
+        <div class="head" style="margin-bottom:16px"><h2 data-i18n="cm.title">Cộng đồng và hợp tác</h2></div>
+        <p style="color:var(--mut)" data-i18n="cm.lead">Phát triển trang trại phải đi cùng bảo vệ môi trường, tuân thủ pháp luật và chia sẻ lợi ích với cộng đồng nuôi tôm tại địa phương.</p>
+      </div>
+      <figure class="photo"><img src="assets/nha-trai.jpg" alt="" data-i18n-alt="img.house" loading="lazy" width="1533" height="1032"><figcaption data-i18n="cm.capt">Khu nhà và sân vườn tại trang trại</figcaption></figure>
+    </div>
+    <div class="comm">
+      <article><h3 data-i18n="cm.c1">Hội quán nông dân</h3><p data-i18n="cm.c1d">Nơi người nuôi tôm gặp gỡ, trao đổi kinh nghiệm và thực hành sản xuất tốt, phối hợp với các tổ chức khuyến nông của tỉnh.</p></article>
+      <article><h3 data-i18n="cm.c2">Du lịch sinh thái</h3><p data-i18n="cm.c2d">Trải nghiệm mô hình kinh tế tuần hoàn tại trang trại, góp phần quảng bá hình ảnh tôm Cà Mau sạch và bền vững.</p></article>
+      <article><h3 data-i18n="cm.c3">Phối hợp với cơ quan quản lý</h3><p data-i18n="cm.c3d">Chia sẻ dữ liệu xét nghiệm và quản lý dịch bệnh, cùng nghiên cứu, thử nghiệm các giải pháp nuôi mới thích ứng biến đổi khí hậu.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="gia-tom">
   <div class="wrap">
     <div class="head">
       <h2 data-i18n="pz.title">Giá tôm nguyên liệu tham khảo</h2>
@@ -424,13 +538,44 @@ const T = {
     "sf.l1":"Pond caretakers: feed, treatments and water readings for their assigned ponds","sf.l2":"Storekeeper: stock in, stock out and stock counts","sf.l3":"Accounting: income, expenses and shrimp prices","sf.l4":"Technical team and managers: overview, crops, lab tests and user permissions","sf.btn":"Sign in to the staff area",
     "ct.title":"Contact","ct.lead":"Partners, customers and organisations who wish to visit the farm, please contact us in advance.",
     "ct.addr":"Address","ct.addrv":"Ganh Hao commune, Ca Mau province","ct.phone":"Phone","ct.soon":"Coming soon","ct.need":"to be provided",
-    "ft.map":"Farm map"
+    "ft.map":"Farm map",
+    "nav.vision":"Vision",
+    "vs.title":"Vision and mission",
+    "vs.mission":"To develop a shrimp farming model that can be scaled up and handed on to the next generation of shrimp producers: sustainable, efficient and globally competitive.",
+    "vs.tag":"Goals for 2030","vs.g1":"modular farming units","vs.g2v":"2,000 t","vs.g2":"output per unit","vs.g3v":"100,000 t","vs.g3":"of sustainable shrimp from the modular system","vs.g4v":"1 million t","vs.g4":"when the model is transferred to 500 farms",
+    "vs.vtitle":"Core values",
+    "vs.v1":"Quality","vs.v1d":"No antibiotics, no eyestalk ablation of broodstock, working toward zero discharge.",
+    "vs.v2":"Traceability","vs.v2d":"Transparency across the whole chain, from broodstock to the final product.",
+    "vs.v3":"Compliance","vs.v3d":"Working toward ASC and BAP certification and other international standards.",
+    "vs.v4":"Sustainability","vs.v4d":"Lower carbon emissions, mangrove restoration and a closed-loop system.",
+    "vs.v5":"Digitalisation","vs.v5d":"A digitised production chain from hatchery to farm, so origin can be traced down to each pond.",
+    "tc.title":"Science-based shrimp farming",
+    "tc.l1":"Vertical integration","tc.l1d":"Post-larvae from the ShrimpVet hatchery, photosynthetic bacteria produced on the farm, and ShrimpVet beneficial additives built into the feed.",
+    "tc.l2":"Zero tolerance for antibiotics","tc.l2d":"Only verified inputs are used; shrimp are tested for antibiotic residues, resistance genes and their microbiome (metagenomics).",
+    "tc.l3":"Animal welfare","tc.l3d":"Only broodstock without eyestalk ablation, with quality control at every stage.",
+    "tc.l4":"Digitalisation and automation","tc.l4d":"Data for every pond is recorded in a digital system, with sensors and automation being introduced step by step.",
+    "tc.capt":"Photosynthetic bacteria being cultured at the farm",
+    "ci.tag":"Goals","ci.title":"Circular economy, low carbon footprint","ci.lead":"The ESG model aims for a closed-loop system in which the waste from one stage becomes a resource for another.",
+    "ci.l1":"Multi-trophic farming:","ci.l1d":"shrimp together with tilapia, rabbitfish, molluscs, seaweed and mangroves.",
+    "ci.l2":"Waste reuse:","ci.l2d":"manure, uneaten feed and organic matter are reused within the system.",
+    "ci.l3":"Mangrove restoration","ci.l3d":"on 30% of the farm area.",
+    "ci.l4":"Solar power","ci.l4d":"for farm operations.",
+    "ci.l5":"A 70% smaller carbon footprint","ci.l5d":"than conventional farming, with no discharge to the environment.",
+    "ci.c1":"A planted frame floating on a pond","ci.c2":"Adding probiotics to a pond","ci.c3":"Lotus pond next to the farm house",
+    "cm.tag":"Development direction","cm.title":"Community and partnership",
+    "cm.lead":"Developing the farm must go hand in hand with protecting the environment, complying with the law and sharing benefits with the local shrimp farming community.",
+    "cm.capt":"The farm house and garden",
+    "cm.c1":"Farmers' meeting house","cm.c1d":"A place where shrimp farmers meet, share experience and learn good practices, working with the province's agricultural extension services.",
+    "cm.c2":"Eco-tourism","cm.c2d":"Visitors experience the circular economy model on the farm, helping to promote clean, sustainable Ca Mau shrimp.",
+    "cm.c3":"Working with the authorities","cm.c3d":"Sharing laboratory testing and disease management data, and researching and trialling new farming solutions that adapt to climate change.",
+    "img.psb":"Rows of bottles of red photosynthetic bacteria culture","img.raft":"Floating frame planted with vegetation on a pond","img.dose":"A worker pouring a bottle of probiotic into a pond","img.lotus":"Lotus pond with a grass path beside the farm house","img.house":"Farm house with a stone path and garden"
   }
 };
 const VI = {};
 document.querySelectorAll("[data-i18n]").forEach(el => { const k = el.dataset.i18n; if (!(k in VI)) VI[k] = el.textContent; });
 Object.assign(VI, { "img.hero":"Ao nuôi tôm lót bạt có máy quạt nước nhìn từ trên cao tại ShrimpVet ESG Farm", "img.overview":"Toàn cảnh khu ao nuôi của trang trại", "img.treat":"Ao lắng và ao xử lý nước cạnh nhà kho",
-  "img.canal":"Ao nuôi nằm giữa các kênh nước có rừng đước", "img.green":"Vườn cây cạnh nhà ở của trang trại", "img.pond":"Ao nuôi tôm có máy quạt nước" });
+  "img.canal":"Ao nuôi nằm giữa các kênh nước có rừng đước", "img.green":"Vườn cây cạnh nhà ở của trang trại", "img.pond":"Ao nuôi tôm có máy quạt nước",
+  "img.psb":"Các bình nuôi vi khuẩn quang hợp màu đỏ", "img.raft":"Khung trồng thực vật nổi trên mặt ao", "img.dose":"Công nhân đổ bình vi sinh xuống ao", "img.lotus":"Ao sen và lối đi cỏ cạnh nhà", "img.house":"Nhà ở trang trại với lối đi lát đá và sân vườn" });
 VI["pz.size"] = "Size (con/kg)"; VI["pz.price"] = "Giá (đ/kg)"; VI["pz.src"] = "Nguồn"; VI["pz.date"] = "Cập nhật";
 let LANG = "vi";
 try { LANG = localStorage.getItem("esg-lang") || "vi"; } catch (e) {}
