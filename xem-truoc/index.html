@@ -399,8 +399,8 @@ h3.sub{font-size:24px;letter-spacing:-.01em;color:var(--estuary);margin:0 0 18px
       </ul>
     </div>
     <div class="trio">
-      <figure class="photo"><img src="assets/be-thuc-vat.jpg" alt="" data-i18n-alt="img.raft" loading="lazy" width="1496" height="921"><figcaption data-i18n="ci.c1">Khung trồng thực vật trên mặt nước ao</figcaption></figure>
-      <figure class="photo"><img src="assets/bo-sung-vi-sinh.jpg" alt="" data-i18n-alt="img.dose" loading="lazy" width="1511" height="1021"><figcaption data-i18n="ci.c2">Bổ sung vi sinh vào ao</figcaption></figure>
+      <figure class="photo"><img src="assets/be-thuc-vat.jpg" alt="" data-i18n-alt="img.raft" loading="lazy" width="1496" height="921"><figcaption data-i18n="ci.c1">Khung trồng thực vật trên mặt nước ao thải</figcaption></figure>
+      <figure class="photo"><img src="assets/bo-sung-vi-sinh.jpg" alt="" data-i18n-alt="img.dose" loading="lazy" width="1511" height="1021"><figcaption data-i18n="ci.c2">Bổ sung vi sinh vào ao thải</figcaption></figure>
       <figure class="photo"><img src="assets/ao-sen.jpg" alt="" data-i18n-alt="img.lotus" loading="lazy" width="1529" height="948"><figcaption data-i18n="ci.c3">Ao sen cạnh khu nhà của trang trại</figcaption></figure>
     </div>
   </div>
@@ -562,21 +562,21 @@ const T = {
     "ci.l3":"Mangrove restoration","ci.l3d":"on 30% of the farm area.",
     "ci.l4":"Solar power","ci.l4d":"for farm operations.",
     "ci.l5":"A 70% smaller carbon footprint","ci.l5d":"than conventional farming, with no discharge to the environment.",
-    "ci.c1":"A planted frame floating on a pond","ci.c2":"Adding probiotics to a pond","ci.c3":"Lotus pond next to the farm house",
+    "ci.c1":"A planted frame floating on a waste pond","ci.c2":"Adding probiotics to a waste pond","ci.c3":"Lotus pond next to the farm house",
     "cm.tag":"Development direction","cm.title":"Community and partnership",
     "cm.lead":"Developing the farm must go hand in hand with protecting the environment, complying with the law and sharing benefits with the local shrimp farming community.",
     "cm.capt":"The farm house and garden",
     "cm.c1":"Farmers' meeting house","cm.c1d":"A place where shrimp farmers meet, share experience and learn good practices, working with the province's agricultural extension services.",
     "cm.c2":"Eco-tourism","cm.c2d":"Visitors experience the circular economy model on the farm, helping to promote clean, sustainable Ca Mau shrimp.",
     "cm.c3":"Working with the authorities","cm.c3d":"Sharing laboratory testing and disease management data, and researching and trialling new farming solutions that adapt to climate change.",
-    "img.psb":"Rows of bottles of red photosynthetic bacteria culture","img.raft":"Floating frame planted with vegetation on a pond","img.dose":"A worker pouring a bottle of probiotic into a pond","img.lotus":"Lotus pond with a grass path beside the farm house","img.house":"Farm house with a stone path and garden"
+    "img.psb":"Rows of bottles of red photosynthetic bacteria culture","img.raft":"Floating frame planted with vegetation on a waste pond","img.dose":"A worker pouring a bottle of probiotic into a waste pond","img.lotus":"Lotus pond with a grass path beside the farm house","img.house":"Farm house with a stone path and garden"
   }
 };
 const VI = {};
 document.querySelectorAll("[data-i18n]").forEach(el => { const k = el.dataset.i18n; if (!(k in VI)) VI[k] = el.textContent; });
 Object.assign(VI, { "img.hero":"Ao nuôi tôm lót bạt có máy quạt nước nhìn từ trên cao tại ShrimpVet ESG Farm", "img.overview":"Toàn cảnh khu ao nuôi của trang trại", "img.treat":"Ao lắng và ao xử lý nước cạnh nhà kho",
   "img.canal":"Ao nuôi nằm giữa các kênh nước có rừng đước", "img.green":"Vườn cây cạnh nhà ở của trang trại", "img.pond":"Ao nuôi tôm có máy quạt nước",
-  "img.psb":"Các bình nuôi vi khuẩn quang hợp màu đỏ", "img.raft":"Khung trồng thực vật nổi trên mặt ao", "img.dose":"Công nhân đổ bình vi sinh xuống ao", "img.lotus":"Ao sen và lối đi cỏ cạnh nhà", "img.house":"Nhà ở trang trại với lối đi lát đá và sân vườn" });
+  "img.psb":"Các bình nuôi vi khuẩn quang hợp màu đỏ", "img.raft":"Khung trồng thực vật nổi trên mặt ao thải", "img.dose":"Công nhân đổ bình vi sinh xuống ao thải", "img.lotus":"Ao sen và lối đi cỏ cạnh nhà", "img.house":"Nhà ở trang trại với lối đi lát đá và sân vườn" });
 VI["pz.size"] = "Size (con/kg)"; VI["pz.price"] = "Giá (đ/kg)"; VI["pz.src"] = "Nguồn"; VI["pz.date"] = "Cập nhật";
 let LANG = "vi";
 try { LANG = localStorage.getItem("esg-lang") || "vi"; } catch (e) {}
