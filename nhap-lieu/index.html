@@ -292,7 +292,7 @@ function listen(q, fn){ unsubs.push(onSnapshot(q, fn, e => { console.warn(e); if
 let logsUnsub = null, logsFrom = null;
 function wantLogsFrom(){
   const r = role(); let from = addDays(today(), ["admin","kythuat"].includes(r) ? -LOG_WINDOW_DAYS : -14);
-  if (["admin","kythuat"].includes(r)) Object.values(S.ponds).forEach(p => { const c = p.cycleId && S.cycles[p.cycleId]; if (c && c.stockDate < from) from = c.stockDate; });
+  if (["admin","kythuat"].includes(r)) Object.values(S.ponds).forEach(p => { const c = p.cycleId && S.cycles[p.cycleId]; if (c && cStart(c) < from) from = cStart(c); });
   return from;
 }
 function syncLogs(){
@@ -380,11 +380,12 @@ $("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-ta
 
 /* ===== Tổng quan ===== */
 // Ao tính là cần cho ăn trong ngày nếu đã thả và chưa kết thúc vụ (ngày thu hoạch/kết thúc không tính)
-function cycleOn(c, d){ return c.stockDate <= d && (!c.endDate || c.endDate > d); }
+const cStart = c => c.startDate || c.stockDate; // vụ nhận tôm san: tính số liệu từ ngày nhận, DOC vẫn theo ngày thả
+function cycleOn(c, d){ return cStart(c) <= d && (!c.endDate || c.endDate > d); }
 // Ước tính theo vụ, cùng cách tính với app cũ: tỷ lệ sống ước tính 80–90%
 const SURV_LO = 0.8, SURV_HI = 0.9;
 function cycleStats(cy){
-  const logs = Object.values(S.logs).filter(l => l.pond === cy.pond && l.date >= cy.stockDate && (!cy.endDate || l.date <= cy.endDate));
+  const logs = Object.values(S.logs).filter(l => l.pond === cy.pond && l.date >= cStart(cy) && (!cy.endDate || l.date <= cy.endDate));
   const feedCum = logs.reduce((a, l) => a + (l.feedTotal || 0), 0);
   const ab = logs.filter(l => l.water && l.water.abw != null).sort((a, b) => a.date.localeCompare(b.date));
   const a1 = ab.at(-1), a0 = ab.at(-2);
@@ -806,7 +807,7 @@ const NO_FEED = "Không cho ăn";
 function fedDay(p, d){ const l = S.logs[p + "_" + d]; return !!l && ((l.feedTotal || 0) > 0 || (l.feeds || []).length > 0 || (l.note || "").includes(NO_FEED)); }
 function missingDays(p){
   const cy = activeCycle(p); if (!cy) return [];
-  const y = addDays(today(), -1); let d = cy.stockDate > addDays(y, -13) ? cy.stockDate : addDays(y, -13);
+  const y = addDays(today(), -1); let d = cStart(cy) > addDays(y, -13) ? cStart(cy) : addDays(y, -13);
   const out = []; for (; d <= y; d = addDays(d, 1)) if (!fedDay(p, d)) out.push(d);
   return out;
 }
@@ -860,7 +861,7 @@ function vPondForm(p){
   const ro = edit ? "" : "disabled";
   return `<button class="back" data-back>← Danh sách ao</button>
   <h2>Ao ${esc(p)} ${cy ? `<span class="chip g">Đang nuôi · DOC ${daysBetween(cy.stockDate, today())}</span>` : `<span class="chip">Chưa có vụ</span>`}</h2>
-  <div class="small mut">Phụ trách: ${esc(userName(S.ponds[p] && S.ponds[p].owner))}${cy ? ` · Thả ${vnDate(cy.stockDate)} · ${fmt(cy.stockCount)} con` : ""}</div>
+  <div class="small mut">Phụ trách: ${esc(userName(S.ponds[p] && S.ponds[p].owner))}${cy ? ` · Thả ${vnDate(cy.stockDate)} · ${fmt(cy.stockCount)} con${cy.startDate ? ` · nhận tôm san ngày ${vnDate(cy.startDate)}` : ""}` : ""}</div>
   ${!edit ? `<div class="banner">Anh/chị chỉ được xem ao này.</div>` : ""}
   ${(() => { const m = missingDays(p); return m.length ? `<div class="banner">Ao này còn thiếu lượng ăn: ${m.map(d => `<a href="#" data-day="${d}">${shortDate(d)}</a>`).join(", ")} <span class="small">(bấm vào ngày để nhập)</span></div>` : ""; })()}
   ${!cy && edit ? `<div class="banner">Ao chưa bắt đầu vụ. Vẫn nhập được, nhưng nên nhờ Kỹ thuật “Bắt đầu vụ” trước.</div>` : ""}
@@ -945,7 +946,7 @@ function vVu(){
     return `<tr><td><b>${p}</b></td>
       <td><select data-owner="${p}"><option value="">– chưa giao –</option>${pondStaff.map(([e,u]) => `<option value="${esc(e)}" ${e===own?"selected":""}>${esc(u.name||e)}</option>`).join("")}</select></td>
       <td>${cy ? `<span class="chip g">Đang nuôi</span>` : `<span class="chip">Trống</span>`}</td>
-      <td class="small">${cy ? `Thả ${vnDate(cy.stockDate)} · ${fmt(cy.stockCount)} con · DOC ${daysBetween(cy.stockDate,t)}` : "–"}</td>
+      <td class="small">${cy ? `Thả ${vnDate(cy.stockDate)} · ${fmt(cy.stockCount)} con${cy.startDate ? ` (nhận san ${vnDate(cy.startDate)})` : ""} · DOC ${daysBetween(cy.stockDate,t)}` : "–"}</td>
       <td>${cy ? `<button class="btn s d" data-end="${p}">Kết thúc vụ</button>` : `<button class="btn s" data-start="${p}">Bắt đầu vụ</button>`}</td></tr>`;
   }).join("");
   const sp = UI.startPond;
