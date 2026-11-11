@@ -526,7 +526,7 @@ function vHome(){
   // Tình hình từng ao
   const rows = act.map(p => {
     const cy = activeCycle(p), st = cycleStats(cy);
-    const lf = lastFed(p), lfl = lf ? S.logs[p + "_" + lf] : null;
+    const lf0 = lastFed(p), lf = lf0 && lf0 >= cStart(cy) ? lf0 : null, lfl = lf ? S.logs[p + "_" + lf] : null;
     const lw = lastWater(p), al = lw ? waterAlerts(lw.water) : [];
     const pos = pcrPos.filter(x => x.pond === p).map(x => x.target);
     return Object.assign({ p, cy, lf, kg: lfl ? lfl.feedTotal : null, al, pos }, st);
