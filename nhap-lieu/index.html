@@ -134,7 +134,20 @@ table.ov tr:nth-child(even) td{background:#f8fcfb}
 table.ov tr.al td{background:#fff3f0}
 table.ov tr.al td:first-child{box-shadow:inset 4px 0 0 var(--bad)}
 .chip.rr{background:var(--bad);color:#fff}
+.ptabs{display:flex;gap:6px;margin:12px 0 14px;border-bottom:2px solid var(--line)}
+.ptabs button{border:0;background:none;font:inherit;font-weight:700;color:var(--mut);padding:10px 14px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.ptabs button.on{color:var(--ac);border-bottom-color:var(--ac)}
+.pinfo .kpi .lbl{display:block;font-size:13px;color:var(--mut);font-weight:600;margin-bottom:4px}
+.wchips{display:flex;flex-wrap:wrap;gap:8px}
+.wchips span{display:flex;flex-direction:column;background:#eef7f5;border:1px solid #d3ebe6;border-radius:10px;padding:8px 12px;font-size:12.5px;color:var(--mut);min-width:84px}
+.wchips span b{font-size:18px;color:var(--ink)}
+.wchips span.bad{background:#fff0ec;border-color:#f3b7aa;color:#b0291b}.wchips span.bad b{color:#b0291b}
 .two{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:12px;align-items:start}
+.two.pg{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+td.wrap{white-space:normal;min-width:220px}
+@media (max-width:900px){.two.pg{grid-template-columns:minmax(0,1fr)}}
+.two.pg>.panel{min-width:0}
+@media (max-width:560px){.kpis.metric.pinfo{grid-template-columns:repeat(2,minmax(0,1fr))}.pinfo .kpi b{font-size:19px}}
 .two .panel{margin:0}
 @media (max-width:820px){.two{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:560px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kpi{flex-direction:column;gap:6px;padding:10px}.kpi .ki{width:32px;height:32px}.kpi .ki .ic{width:18px;height:18px}.kpi b{font-size:19px}.chart text{font-size:13px}}
@@ -626,7 +639,7 @@ function vHome(){
 }
 document.addEventListener("click", e => {
   const g = e.target.closest("[data-go]"); if (!g) return;
-  e.preventDefault(); UI.tab = g.dataset.go; UI.pond = g.dataset.gopond || null; UI.date = today(); rerender(); window.scrollTo(0, 0);
+  e.preventDefault(); UI.tab = g.dataset.go; UI.pond = g.dataset.gopond || null; UI.date = today(); UI.ptab = "info"; rerender(); window.scrollTo(0, 0);
 });
 document.addEventListener("mouseover", e => {
   const h = e.target.closest("#feedchart .hit"), box = $("#feedchart"); if (!box) return;
@@ -843,7 +856,7 @@ function vAo(){
     <div class="grid">${mine.map(card).join("")}</div>
     <p class="small mut">Bấm vào ao để nhập lượng ăn, xử lý, chỉ số môi trường.</p>`;
 }
-document.addEventListener("click", e => { const b = e.target.closest("[data-pond]"); if (!b) return; UI.pond = b.dataset.pond; UI.date = today(); rerender(); window.scrollTo(0,0); });
+document.addEventListener("click", e => { const b = e.target.closest("[data-pond]"); if (!b) return; UI.pond = b.dataset.pond; UI.date = today(); UI.ptab = "info"; rerender(); window.scrollTo(0,0); });
 
 function itemOptions(grp, sel){
   return `<option value="">– chọn –</option>` + sortedItems(grp).map(([id,v]) => `<option value="${id}" ${id===sel?"selected":""}>${esc(v.name)}${v.unit ? " ("+esc(v.unit)+")" : ""}</option>`).join("");
@@ -862,6 +875,8 @@ function vPondForm(p){
   return `<button class="back" data-back>← Danh sách ao</button>
   <h2>Ao ${esc(p)} ${cy ? `<span class="chip g">Đang nuôi · DOC ${daysBetween(cy.stockDate, today())}</span>` : `<span class="chip">Chưa có vụ</span>`}</h2>
   <div class="small mut">Phụ trách: ${esc(userName(S.ponds[p] && S.ponds[p].owner))}${cy ? ` · Thả ${vnDate(cy.stockDate)} · ${fmt(cy.stockCount)} con${cy.startDate ? ` · nhận tôm san ngày ${vnDate(cy.startDate)}` : ""}` : ""}</div>
+  <div class="ptabs"><button class="${UI.ptab !== "form" ? "on" : ""}" data-ptab="info">Thông tin ao</button><button class="${UI.ptab === "form" ? "on" : ""}" data-ptab="form">${edit ? "Nhập số liệu" : "Số liệu theo ngày"}</button></div>
+  ${UI.ptab !== "form" ? vPondInfo(p, cy, hist) : `
   ${!edit ? `<div class="banner">Anh/chị chỉ được xem ao này.</div>` : ""}
   ${(() => { const m = missingDays(p); return m.length ? `<div class="banner">Ao này còn thiếu lượng ăn: ${m.map(d => `<a href="#" data-day="${d}">${shortDate(d)}</a>`).join(", ")} <span class="small">(bấm vào ngày để nhập)</span></div>` : ""; })()}
   ${!cy && edit ? `<div class="banner">Ao chưa bắt đầu vụ. Vẫn nhập được, nhưng nên nhờ Kỹ thuật “Bắt đầu vụ” trước.</div>` : ""}
@@ -887,14 +902,73 @@ function vPondForm(p){
   ${hist.map(l => `<tr><td><a href="#" data-day="${l.date}">${vnDate(l.date)}</a></td><td class="r num">${fmt((l.feeds||[]).reduce((a,f)=>a+(f.kg||0),0))}</td>
     <td class="small">${esc((l.treats||[]).map(t=>itemName(t.item)).join(", ")) || "–"}</td>
     ${WATER.slice(0,5).map(f => { const v = l.water && l.water[f.k]; return `<td class="r num ${v!=null&&f.bad&&f.bad(v)?"bad":""}">${v!=null?fmt(v):"–"}</td>`; }).join("")}
-    <td class="small mut">${esc(userName(l.by))}</td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có số liệu.</p>`}`;
+    <td class="small mut">${esc(userName(l.by))}</td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có số liệu.</p>`}`}`;
+}
+/* Thông tin ao: số liệu tóm tắt, biểu đồ, xét nghiệm, môi trường */
+function miniChart(pts, o){
+  if (!pts.length) return `<p class="mut small">Chưa có số liệu.</p>`;
+  const W = 640, H = 190, L = 44, Rr = 12, T = 14, B = 26, iw = W - L - Rr, ih = H - T - B;
+  const max = Math.max(...pts.map(x => x.v)) || 1, nice = (() => { const m = Math.pow(10, Math.floor(Math.log10(max))); return Math.ceil(max / m) * m; })();
+  const x = i => L + (pts.length === 1 ? iw / 2 : i * iw / (pts.length - 1)), y = v => T + ih - v / nice * ih;
+  const bw = Math.max(2, Math.min(18, iw / pts.length * 0.7));
+  const ticks = [0, nice / 2, nice].map(v => `<line x1="${L}" x2="${W - Rr}" y1="${y(v)}" y2="${y(v)}" stroke="#e3ecea"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="#6b7f7c">${fmt(v)}</text>`).join("");
+  const step = Math.max(1, Math.ceil(pts.length / 6));
+  const xl = pts.map((p, i) => i % step === 0 || i === pts.length - 1 ? `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="#6b7f7c">${shortDate(p.d)}</text>` : "").join("");
+  const marks = o.type === "bar"
+    ? pts.map((p, i) => `<rect x="${x(i) - bw / 2}" y="${y(p.v)}" width="${bw}" height="${Math.max(0, T + ih - y(p.v))}" rx="2" fill="${i === pts.length - 1 ? o.dark : o.color}"><title>${vnDate(p.d)}: ${fmt(p.v)} ${o.unit}</title></rect>`).join("")
+    : `<polyline fill="none" stroke="${o.color}" stroke-width="2.5" points="${pts.map((p, i) => x(i) + "," + y(p.v)).join(" ")}"/>` + pts.map((p, i) => `<circle cx="${x(i)}" cy="${y(p.v)}" r="4" fill="#fff" stroke="${o.color}" stroke-width="2"><title>${vnDate(p.d)}: ${fmt(p.v)} ${o.unit}</title></circle>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${ticks}${marks}${xl}</svg>`;
+}
+function vPondInfo(p, cy, hist){
+  const fin = can.fin() || role() === "kythuat";
+  const st = cy ? cycleStats(cy) : null, t = today();
+  const lw = Object.values(S.logs).filter(l => l.pond === p && l.water && Object.keys(l.water).some(k => k !== "abw")).sort((a, b) => b.date.localeCompare(a.date))[0] || null, al = lw ? waterAlerts(lw.water) : [];
+  const tests = S.tests.filter(x => x.pond === p && (!cy || x.cycleId === cy.id || x.date >= cStart(cy))).sort((a, b) => b.date.localeCompare(a.date));
+  const latest = {}; tests.filter(x => x.type === "pcr").forEach(x => { if (!latest[x.target] || latest[x.target].date < x.date) latest[x.target] = x; });
+  const pos = Object.values(latest).filter(x => x.result === "pos");
+  const hv = cy ? S.harv.filter(h => h.cycleId === cy.id).sort((a, b) => a.date.localeCompare(b.date)) : [];
+  const logs = cy ? Object.values(S.logs).filter(l => l.pond === p && l.date >= cStart(cy)).sort((a, b) => a.date.localeCompare(b.date)) : [];
+  const feedPts = logs.map(l => ({ d:l.date, v:l.feedTotal || 0 }));
+  const abwPts = logs.filter(l => l.water && l.water.abw != null).map(l => ({ d:l.date, v:l.water.abw }));
+  const dead = logs.reduce((a, l) => a + (l.dead || 0), 0), deadKg = logs.reduce((a, l) => a + (l.deadKg || 0), 0);
+  const k = (c, label, val, sub) => `<div class="kpi" style="--c:${c};cursor:default"><span class="lbl">${label}</span><b>${val}</b><small>${sub || ""}</small></div>`;
+  if (!cy) return `<div class="banner">Ao chưa có vụ nuôi đang chạy.</div>`;
+  return `
+  ${pos.length || al.length ? `<div class="alertbar"><span class="ai">${ico("alert")}</span><div><b>Cảnh báo ao ${esc(p)}</b><div class="its">
+    ${pos.map(x => `<button data-go="xn">${esc(x.target)} dương tính · ${shortDate(x.date)}${x.ct != null ? " · Ct " + fmt(x.ct) : ""}</button>`).join("")}
+    ${al.length ? `<button data-ptab="form">Môi trường ${shortDate(lw.date)}: ${esc(al.join(", "))}</button>` : ""}</div></div></div>` : ""}
+  <div class="kpis metric pinfo">
+    ${k("#0a8a93", "Ngày nuôi (DOC)", daysBetween(cy.stockDate, t), `Thả ${vnDate(cy.stockDate)} · ${fmt(cy.stockCount)} con`)}
+    ${k("#7a55c9", "Trọng lượng bình quân", st.a1 ? fmt(st.a1.water.abw) + " g" : "–", st.a1 ? `Cân ${shortDate(st.a1.date)} · ${st.size ? Math.round(st.size) + " con/kg" : ""}${st.adg != null ? " · tăng " + fmt(Math.round(st.adg * 100) / 100) + " g/ngày" : ""}` : "Chưa có số cân")}
+    ${k("#2a9d5c", "Thức ăn tích lũy", tons(st.feedCum), feedPts.length ? `Gần nhất ${fmt(feedPts.at(-1).v)} kg (${shortDate(feedPts.at(-1).d)})` : "")}
+    ${k("#2a78d6", "Sinh khối ước tính", st.bio ? rng({ lo:st.bio.lo, hi:st.bio.hi }) + " kg" : "–", `Tỷ lệ sống ${SURV_LO * 100}–${SURV_HI * 100}%`)}
+    ${k("#e07a1f", "FCR ước tính", st.fcr ? rng(st.fcr, 2) : "–", st.hKg ? `Đã thu/san ${fmt(st.hKg)} kg` : "")}
+    ${fin ? k("#c47f00", "Giá trị tôm ước tính", st.val ? rng({ lo:st.val.lo / 1e6, hi:st.val.hi / 1e6 }) + " tr" : "–", st.price ? `Giá ${nf0.format(Math.round(st.price))} đ/kg` : "Chưa có giá cho size này") : ""}
+    ${dead ? k("#d93b24", "Tôm hao ghi nhận", "~" + fmt(dead) + " con", fmt(deadKg) + " kg trong vụ") : ""}
+  </div>
+  <div class="two pg">
+    <div class="panel"><div class="ph"><b class="t" style="--c:#2a9d5c">Thức ăn hằng ngày (kg)</b><span class="small mut">từ ${vnDate(cStart(cy))}</span></div>${miniChart(feedPts, { type:"bar", color:"#7fcfa0", dark:"#2a9d5c", unit:"kg" })}</div>
+    <div class="panel"><div class="ph"><b class="t" style="--c:#7a55c9">Trọng lượng bình quân (g)</b></div>${miniChart(abwPts, { type:"line", color:"#7a55c9", unit:"g" })}</div>
+  </div>
+  <div class="two pg">
+    <div class="panel"><div class="ph"><b class="t" style="--c:#0a8a93">Môi trường gần nhất</b><span class="small mut">${lw ? vnDate(lw.date) : ""}</span></div>
+      ${lw ? `<div class="wchips">${WATER.filter(f => f.k !== "abw" && lw.water[f.k] != null).map(f => { const v = lw.water[f.k], bad = f.bad && f.bad(v); return `<span class="${bad ? "bad" : ""}">${esc(f.n)}<b>${fmt(v)}</b></span>`; }).join("") || `<span class="mut small">Chưa có chỉ số môi trường.</span>`}</div>` : `<p class="mut small">Chưa có chỉ số môi trường.</p>`}</div>
+    <div class="panel"><div class="ph"><b class="t" style="--c:#d93b24">Xét nghiệm trong vụ</b><span class="small mut">${tests.length} kết quả</span></div>
+      ${tests.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Loại</th><th>Chỉ tiêu</th><th>Kết quả</th></tr>${tests.slice(0, 10).map(x => `<tr><td>${vnDate(x.date)}</td><td class="small">${x.type === "pcr" ? "PCR" : "Vibrio"}</td><td>${esc(x.target || (x.type === "pcr" ? "" : "Vibrio"))}</td>
+        <td>${x.type === "pcr" ? (x.result === "susp" ? `<span class="chip y">Nghi ngờ</span>` : x.result === "pos" ? `<span class="chip rr">Dương tính${x.ct != null ? " · Ct " + fmt(x.ct) : ""}</span>` : `<span class="chip g">Âm tính</span>`) : `<span class="small">Vàng ${vib(x.yellow, x.yLt)} · Xanh ${vib(x.green, x.gLt)} · Tổng ${vib(x.total, x.tLt)} CFU/ml</span>`}</td></tr>`).join("")}</table></div>` : `<p class="mut small">Chưa có kết quả.</p>`}</div>
+  </div>
+  ${hv.length ? `<div class="panel"><div class="ph"><b class="t" style="--c:#c47f00">Thu hoạch / san tôm</b></div><div class="tw"><table><tr><th>Ngày</th><th>Hình thức</th><th class="r">kg</th><th class="r">Size</th><th>Ghi chú</th></tr>${hv.map(h => `<tr><td>${vnDate(h.date)}</td><td>${HARV_TYPES[h.type] || esc(h.type)}</td><td class="r num">${fmt(h.kg)}</td><td class="r num">${fmt(h.size)}</td><td class="small">${esc(h.note || "")}</td></tr>`).join("")}</table></div></div>` : ""}
+  <div class="panel"><div class="ph"><b class="t" style="--c:#2a78d6">Nhật ký gần đây</b><span class="small mut">bấm ngày để xem/sửa</span></div>
+    ${hist.length ? `<div class="tw"><table><tr><th>Ngày</th><th class="r">Thức ăn (kg)</th><th>Xử lý</th><th>Ghi chú</th></tr>${hist.map(l => `<tr><td><a href="#" data-day="${l.date}">${vnDate(l.date)}</a></td><td class="r num">${(l.note || "").includes(NO_FEED) && !(l.feeds || []).length ? `<span class="small mut">Không cho ăn</span>` : fmt(l.feedTotal || 0)}</td><td class="small">${esc((l.treats || []).map(t => itemName(t.item)).join(", ")) || "–"}</td><td class="small wrap">${esc(l.note || "")}</td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có số liệu.</p>`}</div>
+  ${can.pond(p) ? `<div class="acts"><button class="btn p" data-ptab="form">Nhập số liệu hôm nay</button></div>` : ""}`;
 }
 document.addEventListener("click", e => {
   if (e.target.closest("[data-back]")) { UI.pond = null; rerender(); return; }
+  const pt = e.target.closest("[data-ptab]"); if (pt) { UI.ptab = pt.dataset.ptab; rerender(); return; }
   const add = e.target.closest("[data-add]");
   if (add) { const wrap = add.dataset.add === "feed" ? $("#frows") : $("#trows"); wrap.insertAdjacentHTML("beforeend", add.dataset.add === "feed" ? feedRow() : trRow()); return; }
   const rm = e.target.closest("[data-rm]"); if (rm) { rm.closest(".row").remove(); return; }
-  const dy = e.target.closest("[data-day]"); if (dy) { e.preventDefault(); UI.date = dy.dataset.day; rerender(); window.scrollTo(0,0); return; }
+  const dy = e.target.closest("[data-day]"); if (dy) { e.preventDefault(); UI.date = dy.dataset.day; UI.ptab = "form"; rerender(); window.scrollTo(0,0); return; }
   if (e.target.closest("[data-save-log]")) saveLog(e.target.closest("[data-save-log]"));
 });
 document.addEventListener("change", e => { if (e.target.id === "ldate") { UI.date = e.target.value || today(); rerender(); } });
