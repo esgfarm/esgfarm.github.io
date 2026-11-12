@@ -70,6 +70,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--ac);outline-offs
 textarea{min-height:64px;resize:vertical}
 .f2{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .row{display:grid;grid-template-columns:minmax(0,1fr) 110px 40px;gap:8px;margin-bottom:8px;align-items:center}
+.qtrow{grid-template-columns:minmax(0,1fr) 140px 40px;max-width:640px}
 .btn{font:inherit;font-weight:600;font-size:14px;border:1px solid var(--line);background:var(--sf);color:var(--ink);border-radius:8px;padding:9px 14px;cursor:pointer;white-space:nowrap}
 .btn.p{background:var(--ac);border-color:var(--ac);color:#fff}.btn.d{color:var(--bad)}.btn.s{padding:6px 10px;font-size:13px}
 .btn:disabled{opacity:.5;cursor:default}
@@ -806,12 +807,13 @@ function vQuick(){
     <p class="small mut">Loại thức ăn tự điền theo lần cho ăn trước, chỉ cần gõ <b>số kg từng loại</b>; cột Tổng tự cộng. Số mờ trong ô kg là lượng lần trước để tham khảo (chưa được lưu). Muốn bỏ một loại thì xoá số kg của loại đó.</p>`;
   } else if (tab === "tr") {
     const lst = ponds.map(p => { const l = S.logs[p + "_" + d]; return `<label style="display:inline-flex;gap:6px;align-items:center;margin:0 14px 8px 0;font-weight:600;color:var(--ink)"><input type="checkbox" name="trp" value="${p}" style="width:auto" checked> ${p}${l && (l.treats || []).length ? ` <span class="small mut" style="font-weight:400">(${esc(l.treats.map(t => itemName(t.item) + " " + fmt(t.qty)).join(", "))})</span>` : ""}</label>`; }).join("");
-    body = `<div class="panel"><div class="f2">
-      <div><label>Sản phẩm</label><select id="qtitem">${itemOptions("other", "")}</select></div>
-      <div><label>Liều mỗi ao</label><input id="qtqty" inputmode="decimal"></div>
-      <div style="grid-column:span 2"><label>Ghi thêm vào nhật ký (tuỳ chọn)</label><input id="qtnote" placeholder="vd: trộn vitamin C, tỏi"></div></div>
+    body = `<div class="panel">
+      <label>Sản phẩm và liều mỗi ao</label>
+      <div id="qtrows">${qtRow()}${qtRow()}</div>
+      <div class="acts" style="margin-top:6px"><button class="btn s" type="button" data-qtadd>+ Thêm sản phẩm</button><button class="btn s" type="button" data-qtprev>Lấy theo hôm trước</button></div>
+      <div style="margin-top:12px"><label>Ghi thêm vào nhật ký (tuỳ chọn)</label><input id="qtnote" placeholder="vd: trộn vitamin C, tỏi"></div>
       <div style="margin-top:12px"><label>Áp dụng cho ao <a href="#" data-trall="1" class="small">chọn tất cả</a> · <a href="#" data-trall="0" class="small">bỏ chọn</a></label>${lst}</div>
-      <p class="small mut">Ao đã có sản phẩm này trong ngày thì thay bằng liều mới, không cộng dồn. Kho tự trừ theo tổng liều.</p></div>`;
+      <p class="small mut">Chọn được nhiều sản phẩm cùng lúc, mỗi dòng một sản phẩm. Ao đã có sản phẩm đó trong ngày thì thay bằng liều mới, không cộng dồn. Kho tự trừ theo tổng liều.</p></div>`;
   } else {
     const F = WATER;
     body = `<div class="tw"><table class="qt"><tr><th>Ao</th>${F.map(f => `<th class="r">${f.n.replace(" (mg/L)", "").replace(" (°C)", " °C").replace(" (‰)", " ‰").replace("Trọng lượng TB (g/con)", "TL TB (g)")}</th>`).join("")}</tr>
@@ -904,12 +906,19 @@ async function quickSave(btn){
       changes[p] = { feeds, noFeed: nof };
     }
   } else if (tab === "tr") {
-    const it = $("#qtitem").value, q = num($("#qtqty").value), ps = $$("[name=trp]:checked").map(c => c.value), note = $("#qtnote").value.trim();
-    if (!it && !note) return toast("Chưa chọn sản phẩm.");
-    if (it && (isNaN(q) || q <= 0)) return toast("Chưa nhập liều.");
+    const ps = $$("[name=trp]:checked").map(c => c.value), note = $("#qtnote").value.trim(), add = [];
+    for (const r of $$("#qtrows .qtrow")) {
+      const it = r.querySelector(".qti").value, raw = r.querySelector(".qtq").value.trim(), q = num(raw);
+      if (!it && !raw) continue;
+      if (!it) return toast("Có dòng nhập liều nhưng chưa chọn sản phẩm.");
+      if (isNaN(q) || q <= 0) return toast(`Chưa nhập liều cho ${itemName(it)}.`);
+      if (add.some(x => x.item === it)) return toast(`${itemName(it)} bị chọn trùng.`);
+      add.push({ item:it, qty:q });
+    }
+    if (!add.length && !note) return toast("Chưa chọn sản phẩm.");
     if (!ps.length) return toast("Chưa chọn ao nào.");
     ps.forEach(p => { const l = S.logs[p + "_" + d] || {}; changes[p] = { noteAdd: note || undefined };
-      if (it) changes[p].treats = (l.treats || []).filter(x => x.item !== it).concat([{ item:it, qty:q }]); });
+      if (add.length) changes[p].treats = (l.treats || []).filter(x => !add.some(a => a.item === x.item)).concat(add); });
   } else {
     for (const tr of $$("tr[data-qw]")) {
       const w = {}; let ch = false;
@@ -973,6 +982,17 @@ function vAo(){
 }
 document.addEventListener("click", e => { const b = e.target.closest("[data-pond]"); if (!b) return; UI.pond = b.dataset.pond; UI.date = today(); UI.ptab = "info"; rerender(); window.scrollTo(0,0); });
 
+function qtRow(it, q){ return `<div class="row qtrow"><select class="qti">${itemOptions("other", it || "")}</select><input class="qtq" inputmode="decimal" placeholder="liều mỗi ao" value="${q ?? ""}"><button type="button" class="x" data-rm>×</button></div>`; }
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-qtadd]")) { $("#qtrows").insertAdjacentHTML("beforeend", qtRow()); return; }
+  if (e.target.closest("[data-qtprev]")) {
+    const d = $("#qdate").value, ps = $$("[name=trp]:checked").map(c => c.value);
+    let src = null; for (let i = 1; i <= 7 && !src; i++) for (const p of ps) { const l = S.logs[p + "_" + addDays(d, -i)]; if (l && (l.treats || []).length) { src = l; break; } }
+    if (!src) return toast("Không tìm thấy xử lý trong 7 ngày trước của các ao đã chọn.");
+    $("#qtrows").innerHTML = src.treats.map(t => qtRow(t.item, t.qty)).join("") + qtRow();
+    UI.dirty = true; toast(`Đã lấy theo ao ${src.pond} ngày ${shortDate(src.date)}. Anh/chị kiểm tra lại liều trước khi lưu.`); return;
+  }
+});
 function itemOptions(grp, sel){
   return `<option value="">– chọn –</option>` + sortedItems(grp).map(([id,v]) => `<option value="${id}" ${id===sel?"selected":""}>${esc(v.name)}${v.unit ? " ("+esc(v.unit)+")" : ""}</option>`).join("");
 }
