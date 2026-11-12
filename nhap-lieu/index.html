@@ -257,6 +257,60 @@ body.lgmode main.wrap{max-width:none;padding:0;margin:0}
 .acct{max-width:520px}
 .newacc{background:#e9f8ef;border:1px solid #b9e3c9;border-radius:12px;padding:12px 14px;margin-top:12px}
 .newacc code{font-size:16px;font-weight:700;background:#fff;border-radius:6px;padding:2px 8px}
+/* ===== Danh sách ao (dạng thẻ) ===== */
+.ao-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.ao-date{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-weight:600;font-size:14px}.ao-date .ic{width:18px;height:18px;color:var(--ac)}
+.as-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.as{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;font:inherit;text-align:left;cursor:pointer;color:var(--ink)}
+.as[data-afst=""],.as:not([data-afst]){cursor:default}
+.as.on{box-shadow:0 0 0 3px rgba(10,138,147,.2);border-color:var(--ac)}
+.as-i{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--acs);color:var(--ac);flex:none}.as-i .ic{width:20px;height:20px}
+.as small{display:block;font-size:13px;color:var(--mut);font-weight:600}.as b{font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}.as em{font-style:normal;font-size:13px;color:var(--mut);margin-left:6px;font-weight:600}
+.as.g .as-i{background:#e2f5ea;color:#1f8a4c}.as.g b{color:#1f7a45}
+.as.y{background:#fff8e8}.as.y .as-i{background:#ffe2a6;color:#a86a00}.as.y b{color:#b06d00}
+.as.r{background:#fff1ee}.as.r .as-i{background:#ffd3ca;color:#c0311f}.as.r b{color:#c0311f}
+.as.n .as-i{background:#eef1f3;color:#6b7c85}
+.af-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.af-q,.af-sel{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:0 12px}
+.af-q{flex:1 1 220px}.af-q input{border:0;outline:0;box-shadow:none;padding:10px 0;background:none;font:inherit;width:100%}
+.af-q .ic,.af-sel .ic{width:18px;height:18px;color:var(--mut);flex:none}
+.af-sel select{border:0;outline:0;box-shadow:none;background:none;font:inherit;font-weight:600;padding:10px 4px;cursor:pointer;color:var(--ink)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.pcard{display:flex;flex-direction:column;gap:10px;text-align:left;font:inherit;color:inherit;cursor:pointer;background:#fff;border:1.5px solid #cfeadf;border-radius:16px;padding:14px 16px 12px;box-shadow:0 6px 18px -14px rgba(10,95,102,.45);transition:transform .12s,box-shadow .12s}
+.pcard:hover{transform:translateY(-2px);box-shadow:0 12px 26px -16px rgba(10,95,102,.55)}
+.pcard.todo{border-color:#f3c46b;background:#fffaf0}
+.pcard.late{border-color:#f19a8a;background:#fff3f0}
+.pcard.empty{border-color:var(--line);background:#fbfcfc}
+.pc-top{display:flex;align-items:center;gap:10px}
+.pc-id{font-size:26px;font-weight:800;letter-spacing:-.02em;color:#143a40}
+.pst{font-size:13px;font-weight:700;border-radius:99px;padding:4px 11px}
+.pst.ok{background:#dff4e7;color:#1f7a45}.pst.todo{background:#ffe6b8;color:#94590a}.pst.late{background:#e8432b;color:#fff}.pst.empty{background:#eef1f3;color:#5f6f78}
+.pdoc{margin-left:auto;font-size:14px;font-weight:700;color:#1f7a45;background:#eaf7ef;border-radius:99px;padding:4px 12px}
+.pc-own{display:flex;align-items:center;gap:7px;color:#3f5560;font-size:14.5px;font-weight:500}.pc-own .ic{width:17px;height:17px;color:#6b7f88}
+.pc-al{display:flex;flex-wrap:wrap;gap:6px}.pc-al span{font-size:12.5px;font-weight:700;color:#b0291b;background:#ffe5df;border-radius:8px;padding:3px 8px}
+.pc-m{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px dashed #dbe8e5;border-bottom:1px dashed #dbe8e5;padding:8px 0}
+.pc-m .m{display:flex;flex-direction:column;align-items:center;gap:1px;text-align:center}
+.pc-m .m+.m{border-left:1px solid #e7efed}
+.pc-m .ic{width:20px;height:20px;color:#5b7480}.pc-m b{font-size:16px;color:#143a40;font-variant-numeric:tabular-nums;white-space:nowrap}.pc-m small{font-size:11.5px;color:var(--mut);line-height:1.2}
+.pc-foot{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600}
+.pc-foot .ic{width:18px;height:18px;flex:none}
+.pc-foot.ok{color:#1f7a45}.pc-foot.warn{color:#9a5c00}.pc-foot.bad{color:#b52a1b}
+.pc-foot>span:nth-child(2){flex:1;min-width:0}
+.pc-foot .tm{display:inline-flex;align-items:center;gap:4px;color:var(--mut);font-weight:600}.pc-foot .tm .ic{width:15px;height:15px}
+.pc-foot .go{color:#6b7f88;display:inline-flex}
+.pc-foot .cta{display:inline-flex;align-items:center;gap:2px;background:#e8432b;color:#fff;border-radius:9px;padding:4px 8px 4px 11px;font-size:13px}.pc-foot .cta .ic{width:15px;height:15px}
+.pc-emp{color:var(--mut);font-size:14px;padding:16px 0;border-top:1px dashed #dbe8e5;border-bottom:1px dashed #dbe8e5;text-align:center}
+.pcard.empty .pc-foot{color:#6b7c85}
+.ao-legend{display:flex;flex-wrap:wrap;align-items:center;gap:12px 22px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-top:16px}
+.ao-legend span{display:grid;grid-template-columns:auto 1fr;column-gap:8px;align-items:center}
+.ao-legend span .ic{grid-row:span 2;width:26px;height:26px;color:#6b7c85}
+.ao-legend b{font-size:13.5px}.ao-legend small{font-size:12px;color:var(--mut)}
+.ao-legend .okc{color:#1f7a45}.ao-legend .wc{color:#a86a00}.ao-legend .bc{color:#c0311f}
+.ao-legend span:nth-child(1) .ic{color:#1f8a4c}.ao-legend span:nth-child(2) .ic{color:#e09b00}.ao-legend span:nth-child(3) .ic{color:#d93b24}
+.ao-legend .btn{margin-left:auto}
+@media (max-width:1100px){.as-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:560px){.as-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.as{padding:10px}.as b{font-size:22px}.as-i{width:32px;height:32px}
+  .pgrid{grid-template-columns:1fr}.af-sel{flex:1 1 45%}.af-sel select{width:100%}.pc-id{font-size:23px}.pc-m b{font-size:15px}.ao-legend .btn{margin-left:0;width:100%}}
 .back{border:0;background:none;color:var(--ac);font:inherit;font-weight:600;cursor:pointer;padding:0;margin-bottom:6px}
 @media (max-width:560px){.row{grid-template-columns:minmax(0,1fr) 90px 40px}}
 </style>
@@ -973,27 +1027,83 @@ function vAo(){
   const mine = ids.filter(p => S.ponds[p] && (can.allPonds() || S.ponds[p].owner === S.email));
   if (!Object.keys(S.ponds).length) return `<div class="banner">Chưa có danh sách ao. ${can.admin() ? "Anh vào tab <b>Quản lý</b> bấm “Tạo 24 ao”." : "Nhờ anh Hùng tạo danh sách ao."}</div>`;
   if (!mine.length) return `<div class="banner">Anh/chị chưa được giao ao nào. Kỹ thuật sẽ phân ao đầu vụ.</div>`;
-  const t = today();
-  const card = p => {
-    const cy = activeCycle(p), lw = lastWater(p), al = lw ? waterAlerts(lw.water) : [];
-    const done = fedDay(p, t), miss = missingDays(p), lf = lastFed(p);
-    const cls = al.length ? "alert" : cy && miss.length ? "todo" : cy ? "on" : "";
-    return `<button class="pond ${cls}" data-pond="${p}">
-      <span style="display:flex;justify-content:space-between;align-items:center"><b>${esc(p)}</b>${cy ? `<span class="chip g">DOC ${daysBetween(cy.stockDate, t)}</span>` : `<span class="chip">Trống</span>`}</span>
-      <span class="small mut">${esc(userName(S.ponds[p].owner))}</span>
-      ${cy ? `<span class="small mut">Đã nhập đến: <b style="color:var(--ink)">${lf ? shortDate(lf) : "–"}</b></span>
-      <span class="small">${miss.length ? `<span class="warn">Thiếu: ${missText(miss)}</span>` : done ? `<span class="ok">✓ Đã nhập hôm nay</span>` : `<span class="ok">✓ Đủ đến hôm qua</span>`}</span>` : `<span class="small">&nbsp;</span>`}
-      ${al.length ? `<span class="small bad">⚠ ${esc(al.join(", "))}</span>` : ""}
-    </button>`;
+  const t = today(), y = addDays(t, -1), F = UI.af ||= { q:"", zone:"", owner:"", st:"", sort:"id" };
+  const latestPcr = {}; S.tests.forEach(x => { if (x.type !== "pcr") return; const k = x.pond + "|" + x.target; if (!latestPcr[k] || latestPcr[k].date < x.date) latestPcr[k] = x; });
+  const hm = ts => { try { const d = ts && ts.toDate ? ts.toDate() : null; return d ? d.toLocaleTimeString("vi-VN", { hour:"2-digit", minute:"2-digit" }) : ""; } catch (e) { return ""; } };
+  const info = p => {
+    const cy = activeCycle(p), miss = cy ? missingDays(p) : [], tl = S.logs[p + "_" + t];
+    const st = !cy ? "empty" : miss.length >= 2 ? "late" : miss.length === 1 ? "todo" : "ok";
+    const lw = lastWater(p), al = cy && lw ? waterAlerts(lw.water) : [];
+    const pos = cy ? Object.values(latestPcr).filter(x => x.pond === p && x.result === "pos" && x.cycleId === cy.id).map(x => x.target) : [];
+    const cs = cy ? cycleStats(cy) : null, lf0 = cy ? lastFed(p) : null, lf = lf0 && lf0 >= cStart(cy) ? lf0 : null;
+    return { p, cy, miss, st, al, pos, cs, lf, lfl: lf ? S.logs[p + "_" + lf] : null, today: tl && fedDay(p, t) ? tl : null, doc: cy ? daysBetween(cy.stockDate, t) : null, owner: S.ponds[p].owner || "" };
   };
-  const missAll = {}; mine.forEach(p => missingDays(p).forEach(d => (missAll[d] ||= []).push(p)));
-  const mDates = Object.keys(missAll).sort();
-  return `<h2>${can.allPonds() ? "Tất cả ao" : "Ao anh/chị phụ trách"}</h2>
-    ${mDates.length ? `<div class="banner"><b>Còn thiếu lượng ăn:</b><br>${mDates.map(d => `${vnDate(d)}: ${missAll[d].length === mine.filter(activeCycle).length ? `tất cả ${missAll[d].length} ao` : esc(missAll[d].join(", "))}`).join("<br>")}</div>`
-      : mine.some(activeCycle) ? `<div class="banner okb">✓ Đã đủ lượng ăn đến hết hôm qua (${vnDate(addDays(today(),-1))}).</div>` : ""}
-    <div class="grid">${mine.map(card).join("")}</div>
-    <p class="small mut">Bấm vào ao để nhập lượng ăn, xử lý, chỉ số môi trường.</p>`;
+  const all = mine.map(info);
+  const n = k => all.filter(x => x.st === k).length, act = all.filter(x => x.cy).length;
+  const pct = (a, b) => b ? Math.round(a / b * 100) + "%" : "";
+  const owners = [...new Set(all.map(x => x.owner).filter(Boolean))].sort((a, b) => userName(a).localeCompare(userName(b), "vi"));
+  const STL = { ok:["Đúng tiến độ","ok"], todo:["Chưa cập nhật","todo"], late:["Quá hạn","late"], empty:["Ao trống","empty"] };
+  let list = all.filter(x => (!F.q || x.p.toLowerCase().includes(F.q.toLowerCase())) && (!F.zone || x.p[0] === F.zone) && (!F.owner || x.owner === F.owner) && (!F.st || x.st === F.st || (F.st === "alert" && (x.pos.length || x.al.length))));
+  const ord = { late:0, todo:1, ok:2, empty:3 };
+  if (F.sort === "doc") list.sort((a, b) => (b.doc ?? -1) - (a.doc ?? -1));
+  else if (F.sort === "st") list.sort((a, b) => ord[a.st] - ord[b.st] || a.p.localeCompare(b.p));
+  const I = { user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>', w:'<path d="M12 3v3"/><path d="M5 6h14"/><path d="M5 6l-3 7a3 3 0 0 0 6 0L5 6z"/><path d="M19 6l-3 7a3 3 0 0 0 6 0l-3-7z"/><path d="M12 6v14M8 20h8"/>',
+    pond:'<path d="M2 8c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M2 14c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M2 20c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"/>',
+    size:'<path d="M3 12h18"/><path d="M7 8l-4 4 4 4M17 8l4 4-4 4"/>', feed:'<path d="M6 3h12l-1 4H7L6 3z"/><path d="M7 7v13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7"/><path d="M10 12h4"/>', fcr:'<path d="M4 20V14M10 20V9M16 20v-4M22 20H2"/>',
+    ok:'<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>', warn:'<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/>', bad:'<path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18v.5"/>', clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', go:'<path d="M9 6l6 6-6 6"/>', minus:'<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>' };
+  const ic = k => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${I[k]}</svg>`;
+  const card = x => {
+    const [lbl, cls] = STL[x.st], cs = x.cs;
+    if (!x.cy) return `<button class="pcard empty" data-pond="${x.p}"><div class="pc-top"><b class="pc-id">${x.p}</b><span class="pst empty">Ao trống</span></div>
+      <div class="pc-own">${ic("user")}${esc(userName(x.owner) === "–" ? "Chưa giao người" : userName(x.owner))}</div>
+      <div class="pc-emp">Chưa có vụ nuôi đang chạy</div><div class="pc-foot">${ic("minus")}<span>Chưa thả giống hoặc đã kết thúc vụ</span><span class="go">${ic("go")}</span></div></button>`;
+    const kg = x.today ? x.today.feedTotal : x.lfl ? x.lfl.feedTotal : null, kgd = x.today ? "hôm nay" : x.lf ? shortDate(x.lf) : "";
+    const m = (k, v, l) => `<div class="m">${ic(k)}<b>${v}</b><small>${l}</small></div>`;
+    const foot = x.st === "late" ? `<div class="pc-foot bad">${ic("bad")}<span>Thiếu lượng ăn ${x.miss.length <= 3 ? esc(missText(x.miss)) : esc(missText(x.miss).replace(/^\d+ ngày /, ""))}</span><span class="cta">Nhập bù ${ic("go")}</span></div>`
+      : x.st === "todo" ? `<div class="pc-foot warn">${ic("warn")}<span>Chưa nhập lượng ăn ${shortDate(x.miss[0])}</span><span class="go">${ic("go")}</span></div>`
+      : x.today ? `<div class="pc-foot ok">${ic("ok")}<span>Đã cập nhật hôm nay</span>${hm(x.today.at) ? `<span class="tm">${ic("clock")}${hm(x.today.at)}</span>` : ""}<span class="go">${ic("go")}</span></div>`
+      : `<div class="pc-foot ok">${ic("ok")}<span>Đủ đến hôm qua (${shortDate(y)})</span><span class="go">${ic("go")}</span></div>`;
+    return `<button class="pcard ${cls}" data-pond="${x.p}">
+      <div class="pc-top"><b class="pc-id">${x.p}</b><span class="pst ${cls}">${x.st === "late" ? `Quá hạn ${x.miss.length} ngày` : lbl}</span><span class="pdoc">DOC ${x.doc}</span></div>
+      <div class="pc-own">${ic("user")}${esc(userName(x.owner) === "–" ? "Chưa giao người" : userName(x.owner))}</div>
+      ${x.pos.length || x.al.length ? `<div class="pc-al">${[...x.pos.map(z => esc(z) + " dương tính"), ...(x.al.length ? ["Môi trường: " + esc(x.al.join(", "))] : [])].map(z => `<span>⚠ ${z}</span>`).join("")}</div>` : ""}
+      <div class="pc-m">${m("w", cs && cs.a1 ? fmt(cs.a1.water.abw) + " g" : "–", "TL TB")}${m("size", cs && cs.size ? Math.round(cs.size) : "–", "con/kg")}${m("feed", kg != null ? fmt(kg) + " kg" : "–", "Thức ăn " + kgd)}${m("fcr", cs && cs.fcr ? fmt(Math.round((cs.fcr.lo + cs.fcr.hi) / 2 * 100) / 100) : "–", "FCR ƯT")}</div>
+      ${foot}</button>`;
+  };
+  const sel = (k, opts, icon) => `<label class="af-sel">${icon ? ic(icon) : ""}<select data-af="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${F[k] === v ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>`;
+  const stat = (cls, icon, l, v, sub, st) => `<button class="as ${cls} ${F.st === st && st ? "on" : ""}" ${st != null ? `data-afst="${st}"` : ""}><span class="as-i">${ic(icon)}</span><span><small>${l}</small><b>${v}</b>${sub ? `<em>${sub}</em>` : ""}</span></button>`;
+  return `<div class="ao-head"><div><h2 style="margin:0">${can.allPonds() ? "Ao nuôi" : "Ao anh/chị phụ trách"}</h2><span class="small mut">Theo dõi tình trạng ao và cập nhật dữ liệu hằng ngày</span></div>
+    <span class="ao-date">${ic("clock")}Hôm nay ${vnDate(t)}</span></div>
+  <div class="as-row">
+    ${stat("", "pond", "Tổng số ao", mine.length, "", "")}
+    ${stat("g", "ok", "Đang nuôi", act, pct(act, mine.length), null)}
+    ${stat("n", "minus", "Ao trống", n("empty"), pct(n("empty"), mine.length), "empty")}
+    ${stat("g", "ok", "Đúng tiến độ", n("ok"), pct(n("ok"), act), "ok")}
+    ${stat("y", "warn", "Chưa cập nhật", n("todo"), pct(n("todo"), act), "todo")}
+    ${stat("r", "bad", "Quá hạn", n("late"), pct(n("late"), act), "late")}
+  </div>
+  <div class="af-row">
+    <label class="af-q"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input data-af="q" placeholder="Tìm mã ao…" value="${esc(F.q)}"></label>
+    ${sel("zone", [["", "Tất cả khu vực"], ...["A","B","C","D"].filter(z => mine.some(p => p[0] === z)).map(z => [z, "Khu " + z])])}
+    ${owners.length > 1 ? sel("owner", [["", "Tất cả nhân viên"], ...owners.map(o => [o, userName(o)])], "user") : ""}
+    ${sel("st", [["", "Tất cả trạng thái"], ["ok", "Đúng tiến độ"], ["todo", "Chưa cập nhật"], ["late", "Quá hạn"], ["alert", "Có cảnh báo"], ["empty", "Ao trống"]])}
+    ${sel("sort", [["id", "Sắp xếp: Mã ao"], ["doc", "Sắp xếp: DOC"], ["st", "Sắp xếp: Trạng thái"]])}
+  </div>
+  ${list.length ? `<div class="pgrid">${list.map(card).join("")}</div>` : `<div class="banner">Không có ao nào khớp bộ lọc. <a href="#" data-afreset>Xoá bộ lọc</a></div>`}
+  <div class="ao-legend">
+    <span>${ic("ok")}<b class="okc">Đúng tiến độ</b><small>Đã nhập đủ lượng ăn đến hôm qua</small></span>
+    <span>${ic("warn")}<b class="wc">Chưa cập nhật</b><small>Thiếu lượng ăn ngày hôm qua</small></span>
+    <span>${ic("bad")}<b class="bc">Quá hạn</b><small>Thiếu lượng ăn từ 2 ngày trở lên</small></span>
+    <span>${ic("minus")}<b>Ao trống</b><small>Chưa thả giống hoặc đã kết thúc vụ</small></span>
+    <button class="btn" data-go="map">Xem sơ đồ trang trại →</button>
+  </div>`;
 }
+document.addEventListener("change", e => { const k = e.target.dataset && e.target.dataset.af; if (k && e.target.tagName === "SELECT") { UI.af[k] = e.target.value; rerender(); } });
+document.addEventListener("input", e => { if (e.target.dataset && e.target.dataset.af === "q") { UI.af.q = e.target.value; clearTimeout(UI.afT); UI.afT = setTimeout(() => { rerender(); const i = $("[data-af=q]"); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 250); } });
+document.addEventListener("click", e => {
+  const s = e.target.closest("[data-afst]"); if (s) { UI.af.st = UI.af.st === s.dataset.afst ? "" : s.dataset.afst; rerender(); return; }
+  if (e.target.closest("[data-afreset]")) { e.preventDefault(); UI.af = null; rerender(); }
+});
 document.addEventListener("click", e => { const b = e.target.closest("[data-pond]"); if (!b) return; UI.pond = b.dataset.pond; UI.date = today(); UI.ptab = "info"; rerender(); window.scrollTo(0,0); });
 
 function trCount(){ const c = $("#trcount"); if (!c) return; const ps = $$("[name=trp]:checked").map(x => x.value); c.textContent = ps.length ? `Đã chọn ${ps.length} ao: ${ps.join(", ")}` : "Chưa chọn ao nào"; c.classList.toggle("on", ps.length > 0); const b = $("[data-qsave]"); if (b) b.textContent = ps.length ? `Áp dụng cho ${ps.length} ao: ${ps.join(", ")}` : "Áp dụng cho các ao đã chọn"; }
