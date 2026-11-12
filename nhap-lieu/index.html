@@ -340,7 +340,7 @@ $("#chpw").onclick = () => { UI.pw = true; UI.pond = null; rerender(); window.sc
 onAuthStateChanged(auth, u => {
   unsubs.forEach(f => f()); unsubs = [];
   Object.assign(S, { user:u, me:null, started:false, err:"", users:{}, ponds:{}, cycles:{}, logs:{}, items:{}, moves:[], fin:[], harv:[], tests:[], prices:[] });
-  $("#logout").hidden = !u; $("#chpw").hidden = true; UI.pw = false;
+  $("#logout").hidden = !u; $("#chpw").hidden = true; UI.pw = false; UI.dirty = false;
   if (!u) { renderLogin(); return; }
   S.email = (u.email || "").toLowerCase();
   $("#who").textContent = u.displayName ? u.displayName + " · " + S.email : loginName(S.email);
@@ -481,7 +481,7 @@ function tabsFor(){
 }
 // Khi đang gõ dở một biểu mẫu, dữ liệu mới từ người khác không vẽ lại trang (tránh mất chữ đang nhập).
 UI.dirty = false;
-document.addEventListener("input", e => { if (e.target.closest("#main") && e.target.matches("input,textarea")) UI.dirty = true; });
+document.addEventListener("input", e => { if (S.user && e.target.closest("#main") && !e.target.closest(".lgp") && e.target.matches("input,textarea")) UI.dirty = true; });
 function rerender(){ UI.dirty = false; render(); }
 
 function render(){
