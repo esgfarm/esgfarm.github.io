@@ -195,7 +195,7 @@ body.lgmode main.wrap{max-width:none;padding:0;margin:0}
 .lgp::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,rgba(255,255,255,.93) 0%,rgba(255,255,255,.72) 30%,rgba(255,255,255,0) 55%),linear-gradient(0deg,rgba(6,62,66,.55) 0%,rgba(6,62,66,0) 35%)}
 .lg-hero{position:relative;display:flex;flex-direction:column;padding:44px 56px 40px;min-height:100vh}
 .lg-brand{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit}
-.lg-mark{width:58px;height:58px;border-radius:50%;box-shadow:0 6px 18px -8px rgba(10,95,102,.6);display:block}.lg-mark svg{width:100%;height:100%}
+.lg-mark{display:block;background:#fff;border-radius:12px;padding:6px 10px;box-shadow:0 8px 20px -10px rgba(10,95,102,.55)}.lg-mark img{display:block;height:52px;width:auto}
 .lg-brand b{display:block;font-size:24px;font-weight:800;color:#0b4f73;letter-spacing:-.01em}.lg-brand b em{font-style:normal;color:#2a9d5c}
 .lg-brand small{display:block;font-size:14px;color:#2b5a6a;font-style:italic}
 .lg-copy{margin-top:56px}
@@ -234,7 +234,7 @@ body.lgmode main.wrap{max-width:none;padding:0;margin:0}
   .lg-hero{min-height:0;padding:22px 18px 0}
   .lg-copy{margin-top:22px}.lg-copy h1{font-size:28px}.lg-copy p{font-size:14px;gap:8px;margin-top:8px}
   .lg-feats{display:none}
-  .lg-brand b{font-size:19px}.lg-brand small{font-size:12px}.lg-mark{width:46px;height:46px}
+  .lg-brand b{font-size:19px}.lg-brand small{font-size:12px}.lg-mark img{height:40px}
   .lg-side{padding:22px 16px 36px}
   .lg-card{padding:28px 22px 20px;border-radius:20px}.lg-card h2{font-size:30px}
 }
@@ -362,7 +362,7 @@ function renderLogin(){
   const ic = (k, c) => `<svg class="ic ${c || ""}" viewBox="0 0 24 24" aria-hidden="true">${I[k]}</svg>`;
   $("#main").innerHTML = `<div class="lgp">
   <section class="lg-hero">
-    <a class="lg-brand" href="../"><span class="lg-mark"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="#fff"/><path d="M9 28c4 0 4-3 8-3s4 3 8 3 4-3 8-3 4 3 7 3" fill="none" stroke="#0a8a93" stroke-width="3" stroke-linecap="round"/><path d="M9 35c4 0 4-3 8-3s4 3 8 3 4-3 8-3 4 3 7 3" fill="none" stroke="#2a9d5c" stroke-width="3" stroke-linecap="round"/><path d="M33 12c-6-1-12 2-13 9" fill="none" stroke="#0a8a93" stroke-width="3" stroke-linecap="round"/><circle cx="33" cy="12" r="2" fill="#0a8a93"/></svg></span>
+    <a class="lg-brand" href="../"><span class="lg-mark"><img src="../assets/logo-shrimpvet.png" alt="Logo ShrimpVet"></span>
       <span><b>ShrimpVet <em>ESG Farm</em></b><small>Nuôi tôm không kháng sinh · Bảo vệ môi trường</small></span></a>
     <div class="lg-copy"><h1>Hệ thống quản lý<br>trang trại <em>nuôi tôm</em></h1>
       <p>Hiệu quả hơn <i></i> Bền vững hơn <i></i> Minh bạch hơn</p></div>
