@@ -260,7 +260,8 @@ body.lgmode main.wrap{max-width:none;padding:0;margin:0}
 /* ===== Danh sách ao (dạng thẻ) ===== */
 .ao-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .ao-date{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-weight:600;font-size:14px}.ao-date .ic{width:18px;height:18px;color:var(--ac)}
-.as-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-bottom:12px}
+.as-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:12px}
+@media (max-width:1500px){.as-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .as{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;font:inherit;text-align:left;cursor:pointer;color:var(--ink)}
 .as[data-afst=""],.as:not([data-afst]){cursor:default}
 .as.on{box-shadow:0 0 0 3px rgba(10,138,147,.2);border-color:var(--ac)}
