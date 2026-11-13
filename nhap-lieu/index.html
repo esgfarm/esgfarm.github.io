@@ -1651,7 +1651,7 @@ document.addEventListener("click", async e => {
 
 /* ===== Quản lý ===== */
 function vQl(){
-  const users = Object.entries(S.users).sort((a,b)=>(a[1].name||a[0]).localeCompare(b[1].name||b[0],"vi"));
+  const usersAll = Object.entries(S.users), users = usersAll.filter(([, u]) => !u.deleted).sort((a,b)=>(a[1].name||a[0]).localeCompare(b[1].name||b[0],"vi"));
   const hasPonds = Object.keys(S.ponds).length, hasItems = Object.keys(S.items).length;
   return `<h2>Quản lý</h2>
   ${!hasPonds || !hasItems ? `<div class="panel"><h3 style="margin-top:0">Thiết lập ban đầu</h3><div class="acts" style="margin-top:0">
@@ -1677,7 +1677,8 @@ function vQl(){
   ${users.map(([e,u])=>`<tr><td>${esc(u.name||"")}</td><td class="small">${e.endsWith("@" + USER_DOMAIN) ? `<b>${esc(loginName(e))}</b> <span class="mut">(tên + mật khẩu)</span>` : esc(e)}</td>
     <td><select data-urole="${esc(e)}">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${k===u.role?"selected":""}>${v}</option>`).join("")}</select></td>
     <td>${u.active===false?`<span class="chip r">Đã khoá</span>`:`<span class="chip g">Hoạt động</span>`}</td>
-    <td><button class="btn s ${u.active===false?"":"d"}" data-ulock="${esc(e)}">${u.active===false?"Mở khoá":"Khoá"}</button></td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có nhân viên.</p>`}
+    <td style="white-space:nowrap"><button class="btn s ${u.active===false?"":"d"}" data-ulock="${esc(e)}">${u.active===false?"Mở khoá":"Khoá"}</button> ${e.toLowerCase() !== OWNER_EMAIL && e !== S.email ? `<button class="btn s d" data-udel="${esc(e)}" title="Xoá khỏi danh sách">Xoá</button>` : ""}</td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có nhân viên.</p>`}
+  ${usersAll.length > users.length ? `<p class="small mut">Đã xoá ${usersAll.length - users.length} tài khoản khỏi danh sách. Số liệu họ đã nhập vẫn giữ nguyên tên người nhập.</p>` : ""}
   <div class="panel"><h3 style="margin-top:0">Sao lưu</h3>
     <p class="small mut">Tải toàn bộ số liệu (nhật ký ao, kho, thu–chi, vụ nuôi, thu hoạch) về máy dạng Excel.</p>
     <button class="btn" data-export>Xuất dữ liệu ra Excel</button></div>
@@ -1838,10 +1839,16 @@ document.addEventListener("click", async e => {
     const em = $("#uemail").value.trim().toLowerCase(), name = $("#uname").value.trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return toast("Gmail không hợp lệ.");
     if (!name) return toast("Chưa nhập họ tên.");
-    try { await setDoc(doc(db,"users",em), { name, role:$("#urole").value, active:true }, { merge:true }); toast("Đã cấp quyền cho " + name); rerender(); }
+    try { await setDoc(doc(db,"users",em), { name, role:$("#urole").value, active:true, deleted:false }, { merge:true }); toast("Đã cấp quyền cho " + name); rerender(); }
     catch (er) { console.error(er); toast("Không lưu được."); }
     return;
   }
+  const ud = e.target.closest("[data-udel]");
+  if (ud) { const em = ud.dataset.udel, u = S.users[em] || {}, nm = u.name || loginName(em);
+    const own = Object.entries(S.ponds).filter(([, v]) => v.owner === em).map(([k]) => k);
+    if (own.length) return toast(`${nm} đang phụ trách ao ${own.join(", ")}. Anh giao các ao này cho người khác trước rồi mới xoá.`);
+    if (!confirm(`Xoá ${nm} khỏi danh sách nhân viên?\nTài khoản sẽ không đăng nhập được nữa. Số liệu người này đã nhập vẫn giữ nguyên.`)) return;
+    try { await updateDoc(doc(db,"users",em), { active:false, deleted:true, deletedAt:serverTimestamp() }); toast("Đã xoá " + nm + " khỏi danh sách."); } catch (er) { toast("Không xoá được."); } return; }
   const lk = e.target.closest("[data-ulock]");
   if (lk) { const em = lk.dataset.ulock, u = S.users[em]; const lock = u.active !== false;
     if (lock && !confirm(`Khoá tài khoản ${u.name||em}? Người này sẽ không nhập được nữa.`)) return;
