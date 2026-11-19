@@ -218,6 +218,7 @@ td.wrap{white-space:normal;min-width:220px}
 .seg{display:inline-flex;background:var(--sunk);border-radius:10px;padding:3px;gap:3px}.seg button{border:0;background:none;padding:8px 16px;border-radius:8px;font-weight:600;color:var(--mut);cursor:pointer;font:inherit;font-weight:600}.seg button.on{background:#fff;color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .xtg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.xtg button{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:6px 12px;font:inherit;font-size:13.5px;font-weight:600;color:var(--mut);cursor:pointer}.xtg button.on{border-color:var(--ac);background:var(--acs);color:var(--ac)}
 @media (max-width:700px){.seg.qseg{display:grid!important;grid-template-columns:1fr 1fr;width:100%}.qseg button{white-space:nowrap;padding:9px 6px}}
+.qt input.pr{width:96px}.qt th.qtia{background:#fdf3e1;color:#8a5a00}
 .xnt td,.xnt th{padding:6px 8px}.xcell{display:flex;gap:4px}.xnt select.xr{min-width:112px;max-width:120px}.xnt input.xct{width:64px;text-align:right}.xnt input.xv{width:110px;text-align:right}
 .xnt select.xr.neg{background:var(--oks);color:var(--ok);border-color:var(--ok)}.xnt select.xr.susp{background:var(--warns);color:var(--warn);border-color:var(--warn)}.xnt select.xr.pos{background:var(--bad);color:#fff;border-color:var(--bad)}
 .xnt tr.chg td{background:var(--acs)}
@@ -982,11 +983,13 @@ function vQuick(){
       <div style="margin-top:14px"><div class="pc-head"><label style="margin:0">Áp dụng cho ao</label><span class="pc-count" id="trcount">Chưa chọn ao nào</span><a href="#" data-trall="1" class="small">chọn tất cả</a><a href="#" data-trall="0" class="small">bỏ chọn</a></div><div class="pc-grid">${lst}</div></div>
       <p class="small mut">Chọn được nhiều sản phẩm cùng lúc, mỗi dòng một sản phẩm. Ao đã có sản phẩm đó trong ngày thì thay bằng liều mới, không cộng dồn. Kho tự trừ theo tổng liều.</p></div>`;
   } else if (tab === "can") {
-    body = `<div class="tw"><table class="qt"><tr><th>Ao</th><th class="r">TL TB (g/con)</th><th class="r">Tôm hao (kg)</th><th>Lần cân trước</th></tr>
+    body = `<div class="tw"><table class="qt"><tr><th>Ao</th><th class="r">TL TB (g/con)</th><th class="r">Tôm hao (kg)</th><th class="r qtia">Thu tỉa (kg)</th><th class="r qtia">Size tỉa (con/kg)</th><th class="r qtia">Giá tỉa (đ/kg)</th><th>Lần cân trước</th></tr>
     ${ponds.map(p => { const l = S.logs[p + "_" + d] || {}, w = l.water || {};
       const prev = Object.values(S.logs).filter(x => x.pond === p && x.date < d && x.water && x.water.abw != null).sort((a, b) => b.date.localeCompare(a.date))[0];
-      return `<tr data-qc="${p}"><td><b>${p}</b></td><td class="r"><input class="w" name="c_abw" inputmode="decimal" value="${w.abw ?? ""}" data-orig="${w.abw ?? ""}"></td><td class="r"><input class="w" name="c_dead" inputmode="decimal" value="${l.deadKg ?? ""}" data-orig="${l.deadKg ?? ""}"></td><td class="small mut">${prev ? `${fmt(prev.water.abw)} g · ${shortDate(prev.date)}` : "Chưa cân"}</td></tr>`; }).join("")}</table></div>
-    <p class="small mut">Chỉ điền ao có cân tôm hoặc có tôm hao trong ngày, ao khác để trống. Số con hao web tự ước tính theo trọng lượng TB lần cân gần nhất. Xoá số trong ô rồi lưu là xoá số đó.</p>`;
+      return `<tr data-qc="${p}"><td><b>${p}</b></td><td class="r"><input class="w" name="c_abw" inputmode="decimal" value="${w.abw ?? ""}" data-orig="${w.abw ?? ""}"></td><td class="r"><input class="w" name="c_dead" inputmode="decimal" value="${l.deadKg ?? ""}" data-orig="${l.deadKg ?? ""}"></td>
+        <td class="r qtia"><input class="w" name="c_tkg" inputmode="decimal" data-orig="">${tiaDay(p, d)}</td><td class="r qtia"><input class="w" name="c_tsize" inputmode="decimal" data-orig="" placeholder="${(w.abw || (prev && prev.water.abw)) ? "≈" + Math.round(1000 / (w.abw || prev.water.abw)) : ""}" title="Gợi ý theo lần cân gần nhất"></td><td class="r qtia"><input class="w pr" name="c_tprice" inputmode="numeric" data-orig=""></td>
+        <td class="small mut">${prev ? `${fmt(prev.water.abw)} g · ${shortDate(prev.date)}` : "Chưa cân"}</td></tr>`; }).join("")}</table></div>
+    <p class="small mut">Chỉ điền ao có cân tôm, tôm hao hoặc thu tỉa trong ngày, ao khác để trống. Số con hao web tự ước tính theo trọng lượng TB lần cân gần nhất. Thu tỉa: mỗi lần lưu là một lần tỉa mới (không cộng dồn vào lần trước); có giá thì tự ghi khoản thu “Bán tôm”. Thu toàn bộ / san tôm nhập ở Vụ nuôi (Quản lý, Kỹ thuật).</p>`;
   } else {
     const F = WATER.filter(f => f.k !== "abw");
     body = `<div class="tw"><table class="qt"><tr><th>Ao</th>${F.map(f => `<th class="r">${f.n.replace(" (mg/L)", "").replace(" (°C)", " °C").replace(" (‰)", " ‰").replace("Trọng lượng TB (g/con)", "TL TB (g)")}</th>`).join("")}</tr>
@@ -997,7 +1000,7 @@ function vQuick(){
   return `<div class="ph"><h2 style="margin:0">Nhập nhanh</h2><span class="small mut">${UI.qSel.length ? `Đang xem ${ponds.length}/${allP.length} ao` : `${allP.length} ao ${can.allPonds() ? "đang nuôi" : "anh/chị phụ trách"}`}</span></div>
   <div class="acts" style="margin:8px 0 12px;align-items:end">
     <div><label>Ngày</label><input type="date" id="qdate" value="${d}" max="${today()}" ${minD ? `min="${minD}"` : ""} style="width:auto"></div>
-    <div class="seg qseg">${[["feed","Lượng ăn"],["tr","Xử lý"],["env","Môi trường"],["can","Cân tôm & hao"]].map(([k, n]) => `<button data-qtab="${k}" class="${k === tab ? "on" : ""}">${n}</button>`).join("")}</div>
+    <div class="seg qseg">${[["feed","Lượng ăn"],["tr","Xử lý"],["env","Môi trường"],["can","Cân, hao & tỉa"]].map(([k, n]) => `<button data-qtab="${k}" class="${k === tab ? "on" : ""}">${n}</button>`).join("")}</div>
   </div>
   ${qbar}
   ${tab === "feed" ? `<div class="banner ${missing ? "" : "okb"}">${missing ? `Ngày ${vnDate(d)} còn <b>${missing}/${ponds.length}</b> ao chưa nhập lượng ăn.` : `Ngày ${vnDate(d)} đã nhập đủ ${ponds.length} ao.`}</div>` : ""}
@@ -1069,8 +1072,18 @@ async function saveMany(d, changes){
   Object.entries(delta).forEach(([it, v]) => { if (Math.abs(v) > 1e-9 && S.items[it] && !S.items[it].noStock) b.update(doc(db, "stockItems", it), { qty: increment(-v) }); });
   await b.commit();
 }
+async function saveTias(d, tias){
+  const b = writeBatch(db);
+  tias.forEach(x => {
+    const cy = activeCycle(x.p), href = doc(collection(db,"harvests"));
+    b.set(href, { pond:x.p, cycleId:cy ? cy.id : null, date:d, type:"tia", kg:x.kg, size:x.size, price:x.price, note:"", by:S.email, at:serverTimestamp() });
+    if (x.price) b.set(doc(db,"finance","harv_" + href.id), { type:"thu", date:d, cat:"Bán tôm", pond:x.p, amount:Math.round(x.kg * x.price), note:`Thu tỉa ${fmt(x.kg)} kg${x.size ? " size " + fmt(x.size) : ""} × ${nf0.format(x.price)} đ/kg`, harvestId:href.id, by:S.email, at:serverTimestamp() });
+  });
+  await b.commit();
+}
+const tiaDay = (p, d) => { const h = S.harv.filter(x => x.pond === p && x.date === d && x.type === "tia"); return h.length ? `<div class="small mut" style="white-space:nowrap">Đã tỉa ${fmt(h.reduce((a, x) => a + x.kg, 0))} kg</div>` : ""; };
 async function quickSave(btn){
-  const d = UI.qDate || $("#qdate").value, tab = UI.qTab || "feed", changes = {};
+  const d = UI.qDate || $("#qdate").value, tab = UI.qTab || "feed", changes = {}, tias = [];
   if (d > today()) return toast("Không nhập cho ngày tương lai.");
   if (tab === "feed") {
     for (const tr of $$("tr[data-qp]")) {
@@ -1112,7 +1125,16 @@ async function quickSave(btn){
       if (ar !== a.dataset.orig) { if (ar === "") ch.water = { abw:null }; else { const v = num(ar); if (isNaN(v) || v <= 0 || v > 100) return toast(`Ao ${p}: trọng lượng TB không hợp lệ (g/con).`); ch.water = { abw:v }; } }
       if (kr !== k.dataset.orig) { if (kr === "") ch.deadKg = null; else { const v = num(kr); if (isNaN(v) || v < 0) return toast(`Ao ${p}: số kg tôm hao không hợp lệ.`); ch.deadKg = v; } }
       if (Object.keys(ch).length) changes[p] = ch;
+      const tk = tr.querySelector("[name=c_tkg]").value.trim(), ts = tr.querySelector("[name=c_tsize]").value.trim(), tp = tr.querySelector("[name=c_tprice]").value.trim();
+      if (tk || ts || tp) {
+        const kg = num(tk), size = ts ? num(ts) : null, price = tp ? num(tp.replace(/\./g, "")) : null;
+        if (isNaN(kg) || kg <= 0) return toast(`Ao ${p}: chưa nhập số kg thu tỉa.`);
+        if (size != null && (isNaN(size) || size <= 0)) return toast(`Ao ${p}: size tỉa không hợp lệ.`);
+        if (price != null && (isNaN(price) || price <= 0)) return toast(`Ao ${p}: giá tỉa không hợp lệ.`);
+        tias.push({ p, kg, size, price });
+      }
     }
+    if (tias.length && !confirm("Lưu thu tỉa ngày " + vnDate(d) + ":\n" + tias.map(x => `• Ao ${x.p}: ${fmt(x.kg)} kg${x.size ? ", size " + fmt(x.size) : ""}${x.price ? `, ${nf0.format(x.price)} đ/kg = ${nf0.format(Math.round(x.kg * x.price))} đ` : ""}`).join("\n"))) return;
   } else {
     for (const tr of $$("tr[data-qw]")) {
       const w = {}; let ch = false;
@@ -1121,11 +1143,12 @@ async function quickSave(btn){
       if (ch) changes[tr.dataset.qw] = { water: w };
     }
   }
-  const n = Object.keys(changes).length; if (!n) return toast("Chưa có thay đổi nào để lưu.");
+  const n = Object.keys(changes).length; if (!n && !tias.length) return toast("Chưa có thay đổi nào để lưu.");
   btn.disabled = true;
   try {
-    await saveMany(d, changes);
-    toast(`Đã lưu ${n} ao ngày ${vnDate(d)}.`); UI.dirty = false;
+    if (n) await saveMany(d, changes);
+    if (tias.length) await saveTias(d, tias);
+    toast(`Đã lưu ngày ${vnDate(d)}: ${[n ? n + " ao" : "", tias.length ? tias.length + " lần thu tỉa" : ""].filter(Boolean).join(", ")}.`); UI.dirty = false;
     rerender();
   } catch (er) { console.error(er); toast(er.code === "permission-denied" ? "Không có quyền nhập cho một số ao." : "Lưu không được, kiểm tra mạng rồi thử lại."); btn.disabled = false; }
 }
@@ -1433,19 +1456,10 @@ function vVu(){
     <div class="acts"><button class="btn p" data-cstart>Lưu</button><button class="btn" data-ccancel>Huỷ</button></div></div>` : ""}
   <p class="small mut">Chọn người phụ trách ở cột thứ 2, hệ thống lưu ngay. Người phụ trách chỉ nhập được ao của mình.</p>
   <div class="tw"><table><tr><th>Ao</th><th>Người phụ trách</th><th>Trạng thái</th><th>Vụ hiện tại</th><th></th></tr>${rows}</table></div>
-  <div class="panel"><h3 style="margin-top:0">Nhập thu hoạch</h3>
-    ${active.length ? `<div class="f2">
-      <div><label>Ao</label><select id="hpond">${active.map(p=>`<option>${p}</option>`).join("")}</select></div>
-      <div><label>Ngày</label><input type="date" id="hdate" value="${t}" max="${t}"></div>
-      <div><label>Hình thức</label><select id="htype">${Object.entries(HARV_TYPES).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></div>
-      <div><label>Sản lượng (kg)</label><input id="hkg" inputmode="decimal"></div>
-      <div><label>Size (con/kg)</label><input id="hsize" inputmode="decimal"></div>
-      <div><label>Ghi chú</label><input id="hnote"></div></div>
-      <div class="acts"><button class="btn p" data-hsave>Lưu thu hoạch</button></div>` : `<p class="mut">Chưa có ao nào đang nuôi.</p>`}
-  </div>
+  ${harvForm()}
   <h3>Thu hoạch gần đây</h3>
-  ${hv.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Ao</th><th>Hình thức</th><th class="r">kg</th><th class="r">Size</th><th>Ghi chú</th><th>Người nhập</th><th></th></tr>
-  ${hv.map(h=>`<tr><td>${vnDate(h.date)}</td><td>${esc(h.pond)}</td><td>${HARV_TYPES[h.type]||esc(h.type)}</td><td class="r num">${fmt(h.kg)}</td><td class="r num">${fmt(h.size)}</td><td class="small">${esc(h.note||"")}</td><td class="small mut">${esc(userName(h.by))}</td><td><button class="btn s d" data-hdel="${h.id}">Xoá</button></td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có.</p>`}`;
+  ${hv.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Ao</th><th>Hình thức</th><th class="r">kg</th><th class="r">Size</th><th class="r">Giá (đ/kg)</th><th class="r">Thành tiền</th><th>Ghi chú</th><th>Người nhập</th><th></th></tr>
+  ${hv.map(h=>`<tr><td>${vnDate(h.date)}</td><td>${esc(h.pond)}</td><td>${HARV_TYPES[h.type]||esc(h.type)}</td><td class="r num">${fmt(h.kg)}</td><td class="r num">${fmt(h.size)}</td><td class="r num">${h.price ? nf0.format(h.price) : "–"}</td><td class="r num">${h.price ? nf0.format(Math.round(h.kg * h.price)) : "–"}</td><td class="small">${esc(h.note||"")}</td><td class="small mut">${esc(userName(h.by))}</td><td><button class="btn s d" data-hdel="${h.id}">Xoá</button></td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có.</p>`}`;
 }
 document.addEventListener("change", async e => {
   const o = e.target.closest("[data-owner]"); if (!o) return;
@@ -1477,23 +1491,60 @@ document.addEventListener("click", async e => {
     return;
   }
   if (e.target.closest("[data-hsave]")) {
+    const btn = e.target.closest("[data-hsave]");
     const p = $("#hpond").value, d = $("#hdate").value, kg = num($("#hkg").value), size = num($("#hsize").value), type = $("#htype").value;
+    const prRaw = $("#hprice").value.trim(), price = prRaw ? num(prRaw.replace(/\./g, "")) : null;
     if (!d || isNaN(kg) || kg <= 0) return toast("Cần ngày và sản lượng.");
-    const cy = activeCycle(p);
+    if (d > today()) return toast("Không nhập cho ngày tương lai.");
+    if (price != null && (isNaN(price) || price <= 0)) return toast("Giá bán không hợp lệ (đ/kg).");
+    if (!can.cycle() && type !== "tia") return toast("Chỉ Quản lý / Kỹ thuật được nhập thu toàn bộ.");
+    if (!can.pond(p)) return toast("Anh/chị không phụ trách ao này.");
+    const cy = activeCycle(p), note = $("#hnote").value.trim();
+    if (!confirm(`Lưu ${HARV_TYPES[type]} ao ${p} ngày ${vnDate(d)}: ${fmt(kg)} kg${isNaN(size) ? "" : ", size " + fmt(size)}${price ? `, giá ${nf0.format(price)} đ/kg = ${nf0.format(Math.round(kg * price))} đ` : ""}?`)) return;
+    btn.disabled = true;
     try {
-      await setDoc(doc(collection(db,"harvests")), { pond:p, cycleId:cy ? cy.id : null, date:d, type, kg, size:isNaN(size)?null:size, note:$("#hnote").value.trim(), by:S.email, at:serverTimestamp() });
-      toast("Đã lưu thu hoạch ao " + p);
+      const href = doc(collection(db,"harvests")), b = writeBatch(db);
+      b.set(href, { pond:p, cycleId:cy ? cy.id : null, date:d, type, kg, size:isNaN(size)?null:size, price, note, by:S.email, at:serverTimestamp() });
+      if (price) b.set(doc(db,"finance","harv_" + href.id), { type:"thu", date:d, cat:"Bán tôm", pond:p, amount:Math.round(kg * price), note:`${HARV_TYPES[type]} ${fmt(kg)} kg${isNaN(size) ? "" : " size " + fmt(size)} × ${nf0.format(price)} đ/kg${note ? " · " + note : ""}`, harvestId:href.id, by:S.email, at:serverTimestamp() });
+      await b.commit();
+      toast(`Đã lưu ${HARV_TYPES[type].toLowerCase()} ao ${p}${price ? " và ghi khoản thu vào Thu – chi" : ""}.`);
       if (type === "het" && cy && confirm(`Thu toàn bộ ao ${p}. Kết thúc vụ luôn?`)) {
-        const b = writeBatch(db); b.update(doc(db,"cycles",cy.id), { status:"done", endDate:d }); b.update(doc(db,"ponds",p), { cycleId:null }); await b.commit();
+        const b2 = writeBatch(db); b2.update(doc(db,"cycles",cy.id), { status:"done", endDate:d }); b2.update(doc(db,"ponds",p), { cycleId:null }); await b2.commit();
       }
       rerender();
-    } catch (er) { console.error(er); toast("Không lưu được."); }
+    } catch (er) { console.error(er); toast(er.code === "permission-denied" ? "Không có quyền lưu (cần cập nhật luật bảo mật Firebase)." : "Không lưu được."); }
+    finally { btn.disabled = false; }
     return;
   }
   const hd = e.target.closest("[data-hdel]");
-  if (hd && confirm("Xoá dòng thu hoạch này?")) { try { await deleteDoc(doc(db,"harvests",hd.dataset.hdel)); toast("Đã xoá."); } catch (er) { toast("Không xoá được."); } }
+  if (hd && confirm("Xoá dòng thu hoạch này? Khoản thu bán tôm tự ghi kèm (nếu có) cũng bị xoá.")) { try { const id = hd.dataset.hdel, h = S.harv.find(x => x.id === id), b = writeBatch(db); b.delete(doc(db,"harvests",id)); if (h && h.price) b.delete(doc(db,"finance","harv_" + id)); await b.commit(); toast("Đã xoá."); } catch (er) { console.error(er); toast("Không xoá được."); } }
 });
 
+/* Khung nhập thu hoạch: dùng ở Vụ nuôi (Quản lý/Kỹ thuật, chọn ao) và trong trang từng ao (người phụ trách: chỉ thu tỉa) */
+function harvForm(fixed){
+  const t = today(), full = can.cycle();
+  const ponds = fixed ? [fixed] : POND_IDS.filter(p => activeCycle(p));
+  if (!ponds.length) return `<div class="panel"><h3 style="margin-top:0">Nhập thu hoạch</h3><p class="mut">Chưa có ao nào đang nuôi.</p></div>`;
+  const types = Object.entries(HARV_TYPES).filter(([k]) => full || k === "tia");
+  return `<div class="panel"><h3 style="margin-top:0">${full ? "Nhập thu tỉa / thu hoạch" : "Nhập thu tỉa"}${fixed ? " – Ao " + esc(fixed) : ""}</h3>
+    <div class="f2">
+      ${fixed ? `<input type="hidden" id="hpond" value="${fixed}">` : `<div><label>Ao</label><select id="hpond">${ponds.map(p => `<option>${p}</option>`).join("")}</select></div>`}
+      <div><label>Ngày</label><input type="date" id="hdate" value="${t}" max="${t}"></div>
+      <div><label>Hình thức</label><select id="htype">${types.map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
+      <div><label>Sản lượng (kg)</label><input id="hkg" inputmode="decimal"></div>
+      <div><label>Size (con/kg)</label><input id="hsize" inputmode="decimal"></div>
+      <div><label>Giá bán (đ/kg)</label><input id="hprice" inputmode="numeric" placeholder="vd 125.000"></div>
+      <div><label>Ghi chú</label><input id="hnote" placeholder="Thương lái, số xe…"></div></div>
+    <div class="small mut" id="hamt" style="margin-top:6px"></div>
+    <div class="acts"><button class="btn p" data-hsave>Lưu</button></div>
+    <p class="small mut">${full ? "Có giá bán thì web tự ghi khoản thu “Bán tôm” vào Thu – chi. San tôm không cần giá. Thu toàn bộ sẽ hỏi kết thúc vụ." : "Có giá bán thì web tự ghi khoản thu vào Thu – chi. Thu toàn bộ và kết thúc vụ do Quản lý / Kỹ thuật nhập."}</p>
+  </div>`;
+}
+document.addEventListener("input", e => {
+  if (!["hkg","hprice"].includes(e.target.id)) return;
+  const kg = num($("#hkg").value), pr = num(String($("#hprice").value).replace(/\./g, "")), el = $("#hamt");
+  if (el) el.innerHTML = !isNaN(kg) && !isNaN(pr) && kg > 0 && pr > 0 ? `Thành tiền: <b>${nf0.format(Math.round(kg * pr))} đ</b>` : "";
+});
 /* ===== Xét nghiệm ===== */
 const PCR_RES = { neg:"Không phát hiện", susp:"Nghi ngờ", pos:"Phát hiện" };
 const vib = (v, lt) => v == null ? "–" : (lt ? "<" : "") + nf0.format(v);
