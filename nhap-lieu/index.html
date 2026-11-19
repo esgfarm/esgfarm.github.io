@@ -92,6 +92,17 @@ textarea{min-height:64px;resize:vertical}
 .pchk:has(input:checked) .pc-box::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
 .pchk:has(input:checked) .pc-t b{color:var(--ac)}
 .pchk:has(input:focus-visible){outline:3px solid #9fd3cf;outline-offset:2px}
+.qf{display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:0 0 12px}
+.qf-l{font-size:13px;font-weight:700;color:var(--mut);margin-right:2px}
+.qf-sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.qfc{position:relative;border:1.5px solid var(--line);background:#f7fbfa;color:var(--ink);font:inherit;font-weight:700;font-size:14px;border-radius:99px;padding:6px 13px;cursor:pointer;min-height:36px}
+.qfc.p{min-width:48px}
+.qfc:hover{border-color:#9fd3cf}
+.qfc.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.qfc.z.on{background:#143a40;border-color:#143a40}
+.qfc i{position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:#e8432b}
+.qfc.miss{border-color:#f3b7aa;background:#fff3f0;color:#b0291b}
+@media (max-width:560px){.qf{gap:5px;padding:8px}.qfc{font-size:13px;padding:5px 10px;min-height:34px}.qf-sep{display:none}}
 .qtrow{grid-template-columns:minmax(0,1fr) 140px 40px;max-width:640px}
 .btn{font:inherit;font-weight:600;font-size:14px;border:1px solid var(--line);background:var(--sf);color:var(--ink);border-radius:8px;padding:9px 14px;cursor:pointer;white-space:nowrap}
 .btn.p{background:var(--ac);border-color:var(--ac);color:#fff}.btn.d{color:var(--bad)}.btn.s{padding:6px 10px;font-size:13px}
@@ -915,12 +926,23 @@ function feedSplit(l){
 }
 function prevLog(p, d){ for (let i = 1; i <= 7; i++) { const l = S.logs[p + "_" + addDays(d, -i)]; if (l && ((l.feeds || []).length || (l.note || "").includes(NO_FEED))) return l; } return null; }
 function vQuick(){
-  const ponds = quickPonds();
-  if (!ponds.length) return `<h2>Nhập nhanh</h2><div class="banner">${can.allPonds() ? "Chưa có ao đang nuôi." : "Anh/chị chưa được giao ao nào đang nuôi."}</div>`;
+  const allP = quickPonds();
+  if (UI.qSel === undefined) { try { UI.qSel = JSON.parse(localStorage.getItem("qsel:" + S.email) || "[]"); } catch (e) { UI.qSel = []; } }
+  UI.qSel = (UI.qSel || []).filter(p => allP.includes(p));
+  const ponds = allP.filter(p => !UI.qSel.length || UI.qSel.includes(p));
+  if (!allP.length) return `<h2>Nhập nhanh</h2><div class="banner">${can.allPonds() ? "Chưa có ao đang nuôi." : "Anh/chị chưa được giao ao nào đang nuôi."}</div>`;
   if (!UI.qDate) UI.qDate = quickDefaultDate();
   const d = UI.qDate, tab = UI.qTab || "feed";
   const minD = can.allPonds() ? "" : addDays(today(), -13);
   const missing = ponds.filter(p => !fedDay(p, d)).length;
+  const zones = [...new Set(allP.map(p => p[0]))];
+  const qbar = allP.length > 1 ? `<div class="qf"><span class="qf-l">Lọc ao:</span>
+    <button class="qfc ${!UI.qSel.length ? "on" : ""}" data-qf="all">Tất cả (${allP.length})</button>
+    ${zones.length > 1 ? zones.map(z => { const zp = allP.filter(p => p[0] === z), on = UI.qSel.length === zp.length && zp.every(p => UI.qSel.includes(p)); return `<button class="qfc z ${on ? "on" : ""}" data-qz="${z}">Khu ${z}</button>`; }).join("") : ""}
+    <span class="qf-sep"></span>
+    ${allP.map(p => `<button class="qfc p ${UI.qSel.includes(p) ? "on" : ""}" data-qpick="${p}">${p}${tab === "feed" && !fedDay(p, d) ? '<i title="chưa nhập"></i>' : ""}</button>`).join("")}
+    ${tab === "feed" && allP.some(p => !fedDay(p, d)) ? `<button class="qfc miss" data-qmiss>Chỉ ao chưa nhập</button>` : ""}
+  </div>` : "";
   let body = "";
   if (tab === "feed") {
     body = `<div class="tw"><table class="qt"><tr><th>Ao</th><th>Thức ăn 1</th><th class="r">kg</th><th>Thức ăn 2 (nếu trộn)</th><th class="r">kg</th><th>Thức ăn 3 (nếu trộn)</th><th class="r">kg</th><th class="r">Tổng</th><th>Không cho ăn</th><th>Ghi chú</th></tr>
@@ -954,11 +976,12 @@ function vQuick(){
       return `<tr data-qw="${p}"><td><b>${p}</b></td>${F.map(f => `<td class="r"><input class="w ${w[f.k] != null && f.bad && f.bad(w[f.k]) ? "bad" : ""}" name="w_${f.k}" inputmode="decimal" value="${w[f.k] ?? ""}" data-orig="${w[f.k] ?? ""}"></td>`).join("")}</tr>`; }).join("")}</table></div>
     <p class="small mut">Ô đỏ = ngoài ngưỡng (DO &lt; 5, pH &lt; 7,5, NO2 &gt; 2, TAN &gt; 5, kiềm &lt; 89). Xoá số trong ô rồi lưu là xoá chỉ số đó.</p>`;
   }
-  return `<div class="ph"><h2 style="margin:0">Nhập nhanh</h2><span class="small mut">${ponds.length} ao ${can.allPonds() ? "đang nuôi" : "anh/chị phụ trách"}</span></div>
+  return `<div class="ph"><h2 style="margin:0">Nhập nhanh</h2><span class="small mut">${UI.qSel.length ? `Đang xem ${ponds.length}/${allP.length} ao` : `${allP.length} ao ${can.allPonds() ? "đang nuôi" : "anh/chị phụ trách"}`}</span></div>
   <div class="acts" style="margin:8px 0 12px;align-items:end">
     <div><label>Ngày</label><input type="date" id="qdate" value="${d}" max="${today()}" ${minD ? `min="${minD}"` : ""} style="width:auto"></div>
     <div class="seg">${[["feed","Lượng ăn"],["tr","Xử lý"],["env","Môi trường"]].map(([k, n]) => `<button data-qtab="${k}" class="${k === tab ? "on" : ""}">${n}</button>`).join("")}</div>
   </div>
+  ${qbar}
   ${tab === "feed" ? `<div class="banner ${missing ? "" : "okb"}">${missing ? `Ngày ${vnDate(d)} còn <b>${missing}/${ponds.length}</b> ao chưa nhập lượng ăn.` : `Ngày ${vnDate(d)} đã nhập đủ ${ponds.length} ao.`}</div>` : ""}
   ${body}
   <div class="sticky-save">
@@ -987,6 +1010,18 @@ document.addEventListener("keydown", e => { // Enter: xuống ô cùng cột ở
 });
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-qtab]"); if (t) { UI.qTab = t.dataset.qtab; rerender(); return; }
+  const qf = e.target.closest("[data-qf],[data-qz],[data-qpick],[data-qmiss]");
+  if (qf) {
+    if (UI.dirty && !confirm("Có số liệu đang nhập dở chưa lưu. Đổi bộ lọc sẽ mất số đó. Tiếp tục?")) return;
+    const allP = quickPonds(); let sel = (UI.qSel || []).slice();
+    if (qf.dataset.qf) sel = [];
+    else if (qf.dataset.qz) sel = allP.filter(p => p[0] === qf.dataset.qz);
+    else if (qf.dataset.qpick) { const p = qf.dataset.qpick; sel = sel.includes(p) ? sel.filter(x => x !== p) : sel.concat(p); if (sel.length === allP.length) sel = []; }
+    else if (qf.hasAttribute("data-qmiss")) { const d = UI.qDate || today(); sel = allP.filter(p => !fedDay(p, d)); }
+    UI.qSel = allP.filter(p => sel.includes(p));
+    try { localStorage.setItem("qsel:" + S.email, JSON.stringify(UI.qSel)); } catch (er) {}
+    rerender(); return;
+  }
   const a = e.target.closest("[data-trall]"); if (a) { e.preventDefault(); $$("[name=trp]").forEach(c => c.checked = a.dataset.trall === "1"); trCount(); return; }
   if (e.target.closest("[data-qcopy]")) {
     let n = 0;
