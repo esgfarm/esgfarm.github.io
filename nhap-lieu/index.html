@@ -551,8 +551,9 @@ function listen(q, fn){ unsubs.push(onSnapshot(q, fn, e => { console.warn(e); if
 // Quản lý/Kỹ thuật: từ ngày thả sớm nhất của các ao đang nuôi (để tính tích lũy cả vụ); người khác: 14 ngày gần nhất.
 let logsUnsub = null, logsFrom = null;
 function wantLogsFrom(){
+  // Mọi vai trò đều tải từ ngày bắt đầu sớm nhất của các vụ đang nuôi, để "Tổng ăn" luôn đủ cả vụ
   const r = role(); let from = addDays(today(), ["admin","kythuat"].includes(r) ? -LOG_WINDOW_DAYS : -14);
-  if (["admin","kythuat"].includes(r)) Object.values(S.ponds).forEach(p => { const c = p.cycleId && S.cycles[p.cycleId]; if (c && cStart(c) < from) from = cStart(c); });
+  Object.values(S.ponds).forEach(p => { const c = p.cycleId && S.cycles[p.cycleId]; if (c && cStart(c) < from) from = cStart(c); });
   return from;
 }
 function syncLogs(){
@@ -660,7 +661,9 @@ function cycleOn(c, d){ return cStart(c) <= d && (!c.endDate || c.endDate > d); 
 const SURV_LO = 0.8, SURV_HI = 0.9;
 function cycleStats(cy){
   const logs = Object.values(S.logs).filter(l => l.pond === cy.pond && l.date >= cStart(cy) && (!cy.endDate || l.date <= cy.endDate));
-  const feedCum = logs.reduce((a, l) => a + (l.feedTotal || 0), 0);
+  // Chỉ tính tổng khi đã tải xong nhật ký từ máy chủ và đủ từ đầu vụ (tránh hiện số thiếu lúc đang tải)
+  const feedOk = S.logsReady && logsFrom && logsFrom <= cStart(cy);
+  const feedCum = feedOk ? logs.reduce((a, l) => a + (l.feedTotal || 0), 0) : null;
   const ab = logs.filter(l => l.water && l.water.abw != null).sort((a, b) => a.date.localeCompare(b.date));
   const a1 = ab.at(-1), a0 = ab.at(-2);
   const adg = a1 && a0 ? (a1.water.abw - a0.water.abw) / daysBetween(a0.date, a1.date) : null;
@@ -677,7 +680,7 @@ function cycleStats(cy){
   return { feedCum, a1, adg, bio, fcr, hKg, size, price, val };
 }
 const rng = (r, d = 0) => { if (!r) return "–"; const f = new Intl.NumberFormat("vi-VN", { minimumFractionDigits:d, maximumFractionDigits:d }); const a = f.format(r.lo), b = f.format(r.hi); return a === b ? a : `${a}–${b}`; };
-const tons = kg => kg >= 1000 ? nf.format(Math.round(kg / 100) / 10) + " tấn" : nf0.format(kg) + " kg";
+const tons = kg => kg == null ? "Đang tải…" : kg >= 1000 ? nf.format(Math.round(kg / 100) / 10) + " tấn" : nf0.format(kg) + " kg";
 
 /* Biểu đồ so sánh các ao cùng ngày thả */
 const CMP_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];
@@ -805,7 +808,7 @@ function vHome(){
     const pos = pcrPos.filter(x => x.pond === p).map(x => x.target);
     return Object.assign({ p, cy, lf, kg: lfl ? lfl.feedTotal : null, al, pos }, st);
   });
-  const feedCumAll = rows.reduce((a, r) => a + r.feedCum, 0);
+  const feedCumAll = rows.some(r => r.feedCum == null) ? null : rows.reduce((a, r) => a + r.feedCum, 0);
   const withBio = rows.filter(r => r.bio);
   const withVal = rows.filter(r => r.val), LP = latestPrice();
   const valAll = withVal.length ? { lo: withVal.reduce((a, r) => a + r.val.lo, 0), hi: withVal.reduce((a, r) => a + r.val.hi, 0) } : null;
@@ -881,7 +884,7 @@ function vHome(){
       <td class="r num">${r.kg != null ? fmt(r.kg) + " kg" : "–"} <span class="small mut">${r.lf ? shortDate(r.lf) : ""}</span></td>
       <td class="r num">${r.a1 ? fmt(r.a1.water.abw) + " g" : "–"} <span class="small mut">${r.a1 ? shortDate(r.a1.date) : ""}</span></td>
       <td class="r num">${r.adg != null ? fmt(Math.round(r.adg * 100) / 100) + " g/ngày" : "–"}</td>
-      <td class="r num">${fmt(Math.round(r.feedCum))} kg</td>
+      <td class="r num">${r.feedCum == null ? "…" : fmt(Math.round(r.feedCum)) + " kg"}</td>
       <td class="r num">${r.bio ? rng(r.bio) + " kg" : "–"}</td>
       <td class="r num">${r.fcr ? rng(r.fcr, 2) : "–"}</td>
       <td class="r num">${r.size ? nf0.format(r.size) + " con/kg" : "–"}</td>
@@ -1171,7 +1174,7 @@ function vAo(){
       <div class="pc-top"><b class="pc-id z${x.p[0]}">${x.p}</b><span class="pst ${cls}">${x.st === "late" ? `Quá hạn ${x.miss.length} ngày` : lbl}</span><span class="pdoc">DOC ${x.doc}</span></div>
       <div class="pc-own">${ic("user")}${esc(userName(x.owner) === "–" ? "Chưa giao người" : userName(x.owner))}</div>
       ${x.pos.length || x.al.length ? `<div class="pc-al">${[...x.pos.map(z => esc(z) + " dương tính"), ...(x.al.length ? ["Môi trường: " + esc(x.al.join(", "))] : [])].map(z => `<span>⚠ ${z}</span>`).join("")}</div>` : ""}
-      <div class="pc-m">${m("w", cs && cs.a1 ? fmt(cs.a1.water.abw) + " g" : "–", "TL TB", "c1")}${m("ao", cs && cs.bio ? (cs.bio.hi >= 1000 ? `${nf.format(Math.round(cs.bio.lo / 100) / 10)}–${nf.format(Math.round(cs.bio.hi / 100) / 10)} tấn` : `${nf0.format(cs.bio.lo)}–${nf0.format(cs.bio.hi)} kg`) : "–", "Sinh khối ƯT", "c2 rg")}${m("feed", kg != null ? fmt(kg) + " kg" : "–", (x.today ? "Ăn hôm nay" : "Ăn " + kgd), "c3")}${m("sum", cs ? (cs.feedCum >= 1000 ? nf.format(Math.round(cs.feedCum / 10) / 100) + " tấn" : nf0.format(cs.feedCum) + " kg") : "–", "Tổng ăn", "c4")}</div>
+      <div class="pc-m">${m("w", cs && cs.a1 ? fmt(cs.a1.water.abw) + " g" : "–", "TL TB", "c1")}${m("ao", cs && cs.bio ? (cs.bio.hi >= 1000 ? `${nf.format(Math.round(cs.bio.lo / 100) / 10)}–${nf.format(Math.round(cs.bio.hi / 100) / 10)} tấn` : `${nf0.format(cs.bio.lo)}–${nf0.format(cs.bio.hi)} kg`) : "–", "Sinh khối ƯT", "c2 rg")}${m("feed", kg != null ? fmt(kg) + " kg" : "–", (x.today ? "Ăn hôm nay" : "Ăn " + kgd), "c3")}${m("sum", cs && cs.feedCum == null ? "Đang tải…" : cs ? (cs.feedCum >= 1000 ? nf.format(Math.round(cs.feedCum / 10) / 100) + " tấn" : nf0.format(cs.feedCum) + " kg") : "–", "Tổng ăn", "c4")}</div>
       ${foot}</button>`;
   };
   const sel = (k, opts, icon) => `<label class="af-sel">${icon ? ic(icon) : ""}<select data-af="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${F[k] === v ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>`;
