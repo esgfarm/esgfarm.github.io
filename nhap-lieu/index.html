@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ESG Farm – Nhập liệu</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a8a93">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ESG Nhập liệu">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
 <style>
@@ -348,7 +356,7 @@ body.lgmode main.wrap{max-width:none;padding:0;margin:0}
 </head>
 <body>
 <header class="top"><div class="in"><div><b class="who-brand"><span class="lg">ShrimpVet </span>ESG Farm · Nội bộ</b><small id="who">Farm Bạc Liêu</small></div>
-  <div class="acts-h"><a class="home" href="../" title="Về trang giới thiệu"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Trang chủ</span></a><button id="chpw" hidden>Đổi mật khẩu</button><button id="logout" hidden>Đăng xuất</button></div></div></header>
+  <div class="acts-h"><a class="home" href="../" title="Về trang giới thiệu"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Trang chủ</span></a><button id="install" hidden>📲 Cài lên điện thoại</button><button id="chpw" hidden>Đổi mật khẩu</button><button id="logout" hidden>Đăng xuất</button></div></div></header>
 <nav class="tabs" id="tabs" hidden><a class="brandbox" href="../"><b>ShrimpVet ESG Farm</b><span>Khu vực nội bộ</span></a><div class="in"></div><a class="backhome" href="../"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>Về trang giới thiệu</a></nav>
 <main class="wrap" id="main"><p class="mut">Đang tải…</p></main>
 <div class="toast" id="toast" hidden></div>
@@ -435,11 +443,18 @@ const sortedItems = grp => Object.entries(S.items).filter(([,v]) => !grp || (grp
 
 /* ===== Đăng nhập ===== */
 $("#logout").onclick = () => signOut(auth);
+// Cài web lên màn hình chính (Android/Chrome hiện nút; iPhone dùng Chia sẻ → Thêm vào MH chính)
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+let installEv = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEv = e; $("#install").hidden = false; });
+window.addEventListener("appinstalled", () => { $("#install").hidden = true; installEv = null; toast("Đã cài lên màn hình chính."); });
+$("#install").onclick = async () => { if (!installEv) return; installEv.prompt(); await installEv.userChoice.catch(() => {}); installEv = null; $("#install").hidden = true; };
 $("#chpw").onclick = () => { UI.pw = true; UI.pond = null; rerender(); window.scrollTo(0, 0); };
 onAuthStateChanged(auth, u => {
   unsubs.forEach(f => f()); unsubs = [];
   Object.assign(S, { user:u, me:null, started:false, err:"", users:{}, ponds:{}, cycles:{}, logs:{}, items:{}, moves:[], fin:[], harv:[], tests:[], prices:[] });
   $("#logout").hidden = !u; $("#chpw").hidden = true; UI.pw = false; UI.dirty = false;
+  if (u && !UI.hashUsed && location.hash === "#nhanh") { UI.tab = "nhanh"; UI.hashUsed = true; }
   if (!u) { renderLogin(); return; }
   S.email = (u.email || "").toLowerCase();
   $("#who").textContent = u.displayName ? u.displayName + " · " + S.email : loginName(S.email);
