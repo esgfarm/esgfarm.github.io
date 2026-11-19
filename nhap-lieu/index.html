@@ -215,6 +215,12 @@ td.wrap{white-space:normal;min-width:220px}
 .qt input.kg{width:72px;text-align:right}.qt input.pc{width:62px;text-align:right}.qt input.w{width:72px;text-align:right}
 .qt select{min-width:180px;max-width:220px}
 .qt tr.chg td{background:var(--acs)}
+.seg{display:inline-flex;background:var(--sunk);border-radius:10px;padding:3px;gap:3px}.seg button{border:0;background:none;padding:8px 16px;border-radius:8px;font-weight:600;color:var(--mut);cursor:pointer;font:inherit;font-weight:600}.seg button.on{background:#fff;color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.xtg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.xtg button{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:6px 12px;font:inherit;font-size:13.5px;font-weight:600;color:var(--mut);cursor:pointer}.xtg button.on{border-color:var(--ac);background:var(--acs);color:var(--ac)}
+.xnt td,.xnt th{padding:6px 8px}.xcell{display:flex;gap:4px}.xnt select.xr{min-width:112px;max-width:120px}.xnt input.xct{width:64px;text-align:right}.xnt input.xv{width:110px;text-align:right}
+.xnt select.xr.neg{background:var(--oks);color:var(--ok);border-color:var(--ok)}.xnt select.xr.susp{background:var(--warns);color:var(--warn);border-color:var(--warn)}.xnt select.xr.pos{background:var(--bad);color:#fff;border-color:var(--bad)}
+.xnt tr.chg td{background:var(--acs)}
+.xnt .pc-id{display:inline-grid;min-width:40px;height:30px;font-size:15px;border-radius:8px;box-shadow:none}.xnt td:first-child{position:sticky;left:0;background:#fff;z-index:1}.xnt tr.chg td:first-child{background:var(--acs)}
 .qt input.bad{border-color:var(--bad);background:var(--bads)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--sf)}
 .seg button{border:0;background:none;font:inherit;font-weight:600;font-size:14px;padding:9px 14px;color:var(--mut);cursor:pointer}
@@ -1260,9 +1266,8 @@ function vPondForm(p){
     ${edit ? `<button class="btn s" data-add="tr">+ Thêm sản phẩm</button>` : ""}
     <h3>Cân tôm & tôm hao</h3>
     <div class="f2"><div><label>Cân tôm – Trọng lượng TB (g/con)</label><input name="w_abw" inputmode="decimal" placeholder="vd 8,5" value="${w.abw ?? ""}" ${ro}></div>
-      <div><label>Tôm hao – số con (ước)</label><input id="ldead" inputmode="numeric" value="${log.dead ?? ""}" ${ro}></div>
-      <div><label>Tôm hao – khối lượng (kg)</label><input id="ldeadkg" inputmode="decimal" value="${log.deadKg ?? ""}" ${ro}></div></div>
-    <p class="small mut">Chỉ nhập vào ngày có cân tôm hoặc có tôm hao; ngày khác để trống.</p>
+      <div><label>Tôm hao (kg)</label><input id="ldeadkg" inputmode="decimal" value="${log.deadKg ?? ""}" ${ro}></div></div>
+    <p class="small mut">Chỉ nhập vào ngày có cân tôm hoặc có tôm hao; ngày khác để trống. Số con hao web tự ước tính theo trọng lượng TB lần cân gần nhất.</p>
     <h3>Chỉ số môi trường</h3>
     <div class="f2">${WATER.filter(f => f.k !== "abw").map(f => `<div><label>${f.n}</label><input name="w_${f.k}" inputmode="decimal" value="${w[f.k] ?? ""}" ${ro}></div>`).join("")}</div>
     <h3>Ghi chú</h3>
@@ -1303,7 +1308,9 @@ function vPondInfo(p, cy, hist){
   const logs = cy ? Object.values(S.logs).filter(l => l.pond === p && l.date >= cStart(cy)).sort((a, b) => a.date.localeCompare(b.date)) : [];
   const feedPts = logs.map(l => ({ d:l.date, v:l.feedTotal || 0 }));
   const abwPts = logs.filter(l => l.water && l.water.abw != null).map(l => ({ d:l.date, v:l.water.abw }));
-  const dead = logs.reduce((a, l) => a + (l.dead || 0), 0), deadKg = logs.reduce((a, l) => a + (l.deadKg || 0), 0);
+  // Số con hao tự ước tính = kg hao ÷ trọng lượng TB lần cân gần nhất (trước hoặc ngay ngày đó; chưa cân thì lấy lần cân sau gần nhất)
+  const deadEst = l => { if (!l.deadKg) return l.dead || 0; const w = abwPts.filter(x => x.d <= l.date).at(-1) || abwPts.find(x => x.d > l.date); return w && w.v > 0 ? Math.round(l.deadKg * 1000 / w.v) : (l.dead || 0); };
+  const dead = logs.reduce((a, l) => a + deadEst(l), 0), deadKg = logs.reduce((a, l) => a + (l.deadKg || 0), 0);
   const k = (c, i, label, val, sub) => `<div class="kpi" style="--c:${c};cursor:default"><span class="hd"><span class="ki">${ico(i)}</span><span class="lbl">${label}</span></span><b>${val}</b><small>${sub || ""}</small></div>`;
   const hi = i => `<span class="hi">${ico(i)}</span>`;
   if (!cy) return `<div class="banner">Ao chưa có vụ nuôi đang chạy.</div>`;
@@ -1358,9 +1365,8 @@ async function saveLog(btn){
     if (!it && isNaN(v)) continue; if (!it || isNaN(v) || v < 0) return toast("Dòng xử lý chưa đủ sản phẩm hoặc lượng."); treats.push({ item:it, qty:v }); }
   const water = {};
   for (const f of WATER) { const raw = $(`[name=w_${f.k}]`).value; if (raw.trim() === "") continue; const v = num(raw); if (isNaN(v)) return toast(`${f.n} không phải là số.`); water[f.k] = v; }
-  const deadRaw = $("#ldead").value.trim(), deadKgRaw = $("#ldeadkg").value.trim();
-  const dead = deadRaw === "" ? null : num(deadRaw), deadKg = deadKgRaw === "" ? null : num(deadKgRaw);
-  if ((dead != null && (isNaN(dead) || dead < 0)) || (deadKg != null && (isNaN(deadKg) || deadKg < 0))) return toast("Số tôm hao không hợp lệ.");
+  const deadKgRaw = $("#ldeadkg").value.trim(), deadKg = deadKgRaw === "" ? null : num(deadKgRaw), dead = null;
+  if (deadKg != null && (isNaN(deadKg) || deadKg < 0)) return toast("Số kg tôm hao không hợp lệ.");
   let note = $("#lnote").value.trim();
   const noFeed = $("#nofeed").checked;
   if (noFeed && feeds.length) return toast("Đã chọn “không cho ăn” nhưng vẫn có dòng thức ăn.");
@@ -1480,6 +1486,36 @@ function testResult(t){
   if (t.type === "pcr") return `<b>${esc(t.target || "")}</b>: <span class="chip ${t.result==="pos"?"r":t.result==="susp"?"y":"g"}">${PCR_RES[t.result] || esc(t.result)}</span>${t.ct != null ? ` Ct ${fmt(t.ct)}` : ""}`;
   return `Vàng ${vib(t.yellow,t.yLt)} · Xanh ${vib(t.green,t.gLt)} · Tổng ${vib(t.total,t.tLt)} <span class="small mut">CFU/ml</span>`;
 }
+const XN_TARGETS = ["EHP","EMS/AHPND","TPD","WSSV","IHHNV"];
+/* Nhập xét nghiệm dạng bảng: mỗi dòng một ao, nhập nhiều ao + nhiều bệnh trong 1 lần lưu (theo phiếu lab) */
+function vXnForm(){
+  const ty = UI.xty || "pcr", tg = UI.xtg || ["EHP","EMS/AHPND"];
+  const ponds = POND_IDS.filter(p => activeCycle(p) || UI.xall);
+  const zones = [...new Set(ponds.map(p => p[0]))];
+  const zf = UI.xz || "all";
+  const row = p => ty === "pcr"
+    ? `<tr data-xp="${p}" data-xzone="${p[0]}" ${zf !== "all" && p[0] !== zf ? "hidden" : ""}><td><b class="pc-id z${p[0]}">${p}</b></td>${tg.map(t => `<td data-xt="${esc(t)}"><div class="xcell"><select class="xr"><option value="">–</option><option value="neg">Âm tính</option><option value="susp">Nghi ngờ</option><option value="pos">Dương tính</option></select><input class="xct" inputmode="decimal" placeholder="Ct"></div></td>`).join("")}</tr>`
+    : `<tr data-xp="${p}" data-xzone="${p[0]}" ${zf !== "all" && p[0] !== zf ? "hidden" : ""}><td><b class="pc-id z${p[0]}">${p}</b></td><td><input class="xv" data-k="y" placeholder="vd 2000"></td><td><input class="xv" data-k="g" placeholder="vd <10"></td><td><input class="xv" data-k="t" placeholder="tự cộng"></td></tr>`;
+  return `<div class="panel xnf"><h3 style="margin-top:0">Nhập kết quả theo phiếu</h3>
+    <div class="seg"><button class="${ty === "pcr" ? "on" : ""}" data-xty="pcr">PCR (bệnh)</button><button class="${ty === "vibrio" ? "on" : ""}" data-xty="vibrio">Vibrio</button></div>
+    <div class="f2" style="margin-top:10px">
+      <div><label>Ngày lấy mẫu</label><input type="date" id="xdate" value="${UI.xdate || today()}" max="${today()}"></div>
+      <div><label>Loại mẫu</label><select id="xsample">${["Nước ao","Tôm thịt thẻ sống","Tôm thịt thẻ chết","Tôm thịt thẻ ướp lạnh","Khác"].map(v => `<option ${v === (UI.xsample || (ty === "pcr" ? "Tôm thịt thẻ sống" : "Nước ao")) ? "selected" : ""}>${v}</option>`).join("")}</select></div>
+      <div><label>Số phiếu</label><input id="xcode" placeholder="vd 2611-045"></div>
+      <div><label>Ghi chú</label><input id="xnote" placeholder="Phòng lab, giờ nhận mẫu…"></div>
+    </div>
+    ${ty === "pcr" ? `<label style="margin-top:12px">Bệnh có trên phiếu</label><div class="xtg">${[...new Set([...XN_TARGETS, ...tg])].map(t => `<button class="${tg.includes(t) ? "on" : ""}" data-xtg="${esc(t)}">${tg.includes(t) ? "✓ " : ""}${esc(t)}</button>`).join("")}<button data-xtgadd>+ Bệnh khác</button></div>` : ""}
+    <div class="xtg" style="margin-top:10px"><span class="small mut">Khu:</span><button class="${zf === "all" ? "on" : ""}" data-xz="all">Tất cả</button>${zones.map(z => `<button class="${zf === z ? "on" : ""}" data-xz="${z}">Khu ${z}</button>`).join("")}<label class="small" style="display:inline-flex;gap:6px;align-items:center;margin:0 0 0 8px;font-weight:500"><input type="checkbox" id="xall" style="width:auto" ${UI.xall ? "checked" : ""}> Hiện cả ao trống</label></div>
+    <div class="tw" style="margin-top:8px"><table class="qt xnt"><tr><th>Ao</th>${ty === "pcr" ? tg.map(t => `<th>${esc(t)}</th>`).join("") : `<th>Vibrio vàng</th><th>Vibrio xanh</th><th>Vibrio tổng</th>`}</tr>${ponds.map(row).join("")}</table></div>
+    <p class="small mut">Chỉ điền ao có trên phiếu, ao bỏ trống sẽ không lưu. ${ty === "pcr" ? "Nhập Ct thì tự chọn kết quả: Ct &lt; 35 dương tính, 35–40 nghi ngờ (theo phiếu ShrimpVet Lab). Không có Ct thì chọn Âm tính." : "Dưới ngưỡng ghi “&lt;10”. Bỏ trống Vibrio tổng thì tự cộng vàng + xanh."}</p>
+    <div class="acts"><button class="btn p" data-xsave>Lưu kết quả</button><span class="small mut" id="xcount"></span></div>
+  </div>`;
+}
+function xnCount(){
+  const n = [...document.querySelectorAll(".xnt tr[data-xp]")].filter(r => [...r.querySelectorAll("select,input")].some(x => x.value.trim())).length;
+  const el = $("#xcount"); if (el) el.textContent = n ? `${n} ao đã điền` : "";
+  const b = document.querySelector("[data-xsave]"); if (b) b.textContent = n ? `Lưu kết quả ${n} ao` : "Lưu kết quả";
+}
 function vXn(){
   const pf = UI.tp || "all";
   const list = S.tests.filter(t => pf === "all" || t.pond === pf).sort((a,b) => b.date.localeCompare(a.date) || a.pond.localeCompare(b.pond));
@@ -1488,55 +1524,68 @@ function vXn(){
   const pos = Object.values(latest).filter(t => t.result === "pos" && activeCycle(t.pond) && activeCycle(t.pond).id === t.cycleId);
   return `<h2>Xét nghiệm</h2>
   ${pos.length ? `<div class="banner err">⚠ Ao đang nuôi có kết quả PCR dương tính gần nhất: ${pos.map(t => `<b>${esc(t.pond)}</b> ${esc(t.target)} (${vnDate(t.date)})`).join(" · ")}</div>` : ""}
-  <div class="panel"><h3 style="margin-top:0">Thêm kết quả</h3>
-    <div class="f2">
-      <div><label>Loại</label><select id="xtype"><option value="vibrio">Vibrio</option><option value="pcr">PCR</option></select></div>
-      <div><label>Ngày lấy mẫu</label><input type="date" id="xdate" value="${today()}" max="${today()}"></div>
-      <div><label>Ao</label><select id="xpond">${POND_IDS.map(p => `<option>${p}</option>`).join("")}</select></div>
-      <div><label>Loại mẫu</label><select id="xsample">${["Nước ao","Tôm thịt thẻ sống","Tôm thịt thẻ chết","Tôm thịt thẻ ướp lạnh","Khác"].map(v => `<option>${v}</option>`).join("")}</select></div>
-    </div>
-    <div class="f2" id="xvib" style="margin-top:10px">
-      <div><label>Vibrio vàng (CFU/ml)</label><input id="xy" placeholder="vd 2000 hoặc <10"></div>
-      <div><label>Vibrio xanh (CFU/ml)</label><input id="xg" placeholder="vd 10 hoặc <10"></div>
-      <div><label>Vibrio tổng (CFU/ml)</label><input id="xt" placeholder="vd 2010"></div>
-    </div>
-    <div class="f2" id="xpcr" hidden style="margin-top:10px">
-      <div><label>Bệnh</label><input id="xtarget" list="xtargets" placeholder="EHP, EMS/AHPND, TPD, WSSV…"><datalist id="xtargets"><option>EHP</option><option>EMS/AHPND</option><option>TPD</option><option>WSSV</option><option>IHHNV</option></datalist></div>
-      <div><label>Kết quả</label><select id="xres"><option value="neg">Không phát hiện</option><option value="susp">Nghi ngờ</option><option value="pos">Phát hiện</option></select></div>
-      <div><label>Ct (nếu có)</label><input id="xct" inputmode="decimal"></div>
-      <div><label>Số phiếu</label><input id="xcode"></div>
-    </div>
-    <div style="margin-top:10px"><label>Ghi chú</label><input id="xnote" placeholder="Phòng lab, giờ nhận mẫu…"></div>
-    <div class="acts"><button class="btn p" data-xsave>Lưu kết quả</button></div>
-    <p class="small mut">PCR: dương tính khi Ct &lt; 35; nghi ngờ khi 35 ≤ Ct ≤ 40 (theo phiếu ShrimpVet Lab). Vibrio dưới ngưỡng phát hiện ghi “&lt;10”.</p>
-  </div>
+  ${vXnForm()}
   <div class="f2" style="max-width:220px"><div><label>Xem ao</label><select id="xfilter"><option value="all">Tất cả ao</option>${POND_IDS.map(p => `<option ${pf===p?"selected":""}>${p}</option>`).join("")}</select></div></div>
   <h3>Kết quả (${list.length})</h3>
   ${list.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Ao</th><th>Loại</th><th>Mẫu</th><th>Kết quả</th><th>Ghi chú</th><th>Người nhập</th><th></th></tr>
   ${list.map(t => `<tr><td>${vnDate(t.date)}</td><td><b>${esc(t.pond)}</b></td><td>${t.type==="pcr"?"PCR":"Vibrio"}</td><td class="small">${esc(t.sample||"")}</td><td>${testResult(t)}</td><td class="small">${esc([t.code ? "Phiếu " + t.code : "", t.note].filter(Boolean).join(" · "))}</td><td class="small mut">${esc(userName(t.by))}</td><td><button class="btn s d" data-xdel="${t.id}">Xoá</button></td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có kết quả.</p>`}`;
 }
+const xnDirty = () => [...document.querySelectorAll(".xnt select,.xnt input")].some(x => x.value.trim());
+document.addEventListener("input", e => {
+  if (!e.target.closest(".xnt")) return;
+  if (e.target.matches(".xct")) { const ct = num(e.target.value), sel = e.target.parentElement.querySelector(".xr"); if (!isNaN(ct) && ct > 0) { sel.value = ct < 35 ? "pos" : ct <= 40 ? "susp" : "neg"; } }
+  if (e.target.matches(".xr,.xct")) { const sel = e.target.closest(".xcell").querySelector(".xr"); sel.className = "xr " + sel.value; }
+  const tr = e.target.closest("tr"); if (tr) tr.classList.toggle("chg", [...tr.querySelectorAll("select,input")].some(x => x.value.trim()));
+  xnCount();
+});
+document.addEventListener("change", e => { if (e.target.matches(".xnt select")) e.target.dispatchEvent(new Event("input", { bubbles:true })); });
 const parseVib = raw => { const s = String(raw || "").trim(); if (!s) return { v:null, lt:false }; const lt = s.startsWith("<"); const v = num(s.replace("<","").replace(/\./g,"")); return isNaN(v) ? null : { v, lt }; };
 document.addEventListener("change", e => {
-  if (e.target.id === "xtype") { $("#xvib").hidden = e.target.value !== "vibrio"; $("#xpcr").hidden = e.target.value !== "pcr"; }
+  if (e.target.id === "xall") { UI.xall = e.target.checked; rerender(); }
+  if (e.target.id === "xdate") UI.xdate = e.target.value;
+  if (e.target.id === "xsample") UI.xsample = e.target.value;
   if (e.target.id === "xfilter") { UI.tp = e.target.value; rerender(); }
 });
 document.addEventListener("click", async e => {
+  const xty = e.target.closest("[data-xty]");
+  if (xty) { if (xnDirty() && !confirm("Đổi loại xét nghiệm sẽ xoá các ô đang điền. Tiếp tục?")) return; UI.xty = xty.dataset.xty; UI.xsample = null; rerender(); return; }
+  const xtg = e.target.closest("[data-xtg]");
+  if (xtg) { if (xnDirty() && !confirm("Đổi danh sách bệnh sẽ xoá các ô đang điền. Tiếp tục?")) return; const t = xtg.dataset.xtg, cur = UI.xtg || ["EHP","EMS/AHPND"]; UI.xtg = cur.includes(t) ? cur.filter(x => x !== t) : [...cur, t]; if (!UI.xtg.length) UI.xtg = [t]; rerender(); return; }
+  if (e.target.closest("[data-xtgadd]")) { const t = (prompt("Tên bệnh (vd: AHPND, DIV1):") || "").trim(); if (!t) return; if (xnDirty() && !confirm("Thêm bệnh sẽ xoá các ô đang điền. Tiếp tục?")) return; UI.xtg = [...new Set([...(UI.xtg || ["EHP","EMS/AHPND"]), t])]; rerender(); return; }
+  const xz = e.target.closest("[data-xz]");
+  if (xz) { UI.xz = xz.dataset.xz; document.querySelectorAll("[data-xz]").forEach(b => b.classList.toggle("on", b === xz)); document.querySelectorAll(".xnt tr[data-xp]").forEach(r => r.hidden = UI.xz !== "all" && r.dataset.xzone !== UI.xz); return; }
   if (e.target.closest("[data-xsave]")) {
-    const type = $("#xtype").value, d = $("#xdate").value, p = $("#xpond").value;
-    if (!d) return toast("Chưa chọn ngày.");
-    const cy = activeCycle(p);
-    const r = { type, date:d, pond:p, cycleId:cy ? cy.id : null, sample:$("#xsample").value, note:$("#xnote").value.trim(), by:S.email, at:serverTimestamp() };
-    if (type === "vibrio") {
-      const y = parseVib($("#xy").value), g = parseVib($("#xg").value), t = parseVib($("#xt").value);
-      if (!y || !g || !t) return toast("Số Vibrio không hợp lệ.");
-      if (y.v == null && g.v == null && t.v == null) return toast("Chưa nhập số Vibrio.");
-      Object.assign(r, { yellow:y.v, yLt:y.lt, green:g.v, gLt:g.lt, total:t.v, tLt:t.lt });
-    } else {
-      const target = $("#xtarget").value.trim(), ct = num($("#xct").value);
-      if (!target) return toast("Chưa nhập tên bệnh.");
-      Object.assign(r, { target, result:$("#xres").value, ct:isNaN(ct) ? null : ct, code:$("#xcode").value.trim() });
+    const btn = e.target.closest("[data-xsave]"), ty = UI.xty || "pcr", d = $("#xdate").value;
+    if (!d) return toast("Chưa chọn ngày lấy mẫu.");
+    if (d > today()) return toast("Ngày lấy mẫu không được ở tương lai.");
+    const base = { type:ty, date:d, sample:$("#xsample").value, code:$("#xcode").value.trim(), note:$("#xnote").value.trim(), by:S.email, at:serverTimestamp() };
+    const recs = [];
+    for (const r of document.querySelectorAll(".xnt tr[data-xp]")) {
+      const p = r.dataset.xp, cy = activeCycle(p), pb = Object.assign({}, base, { pond:p, cycleId:cy ? cy.id : null });
+      if (ty === "pcr") {
+        for (const c of r.querySelectorAll("td[data-xt]")) {
+          const res = c.querySelector(".xr").value, ctRaw = c.querySelector(".xct").value.trim(), ct = ctRaw ? num(ctRaw) : null;
+          if (!res && !ctRaw) continue;
+          if (ctRaw && (isNaN(ct) || ct <= 0)) return toast(`Ao ${p} – ${c.dataset.xt}: Ct không hợp lệ.`);
+          if (!res) return toast(`Ao ${p} – ${c.dataset.xt}: chưa chọn kết quả.`);
+          recs.push(Object.assign({}, pb, { target:c.dataset.xt, result:res, ct }));
+        }
+      } else {
+        const v = k => r.querySelector(`.xv[data-k=${k}]`).value;
+        if (![v("y"), v("g"), v("t")].some(x => x.trim())) continue;
+        const y = parseVib(v("y")), g = parseVib(v("g")); let t = parseVib(v("t"));
+        if (!y || !g || !t) return toast(`Ao ${p}: số Vibrio không hợp lệ.`);
+        if (t.v == null && (y.v != null || g.v != null)) t = { v:(y.lt ? 0 : y.v || 0) + (g.lt ? 0 : g.v || 0), lt:false };
+        recs.push(Object.assign({}, pb, { yellow:y.v, yLt:y.lt, green:g.v, gLt:g.lt, total:t.v, tLt:t.lt }));
+      }
     }
-    try { await setDoc(doc(collection(db,"tests")), r); toast("Đã lưu kết quả ao " + p); rerender(); } catch (er) { console.error(er); toast(er.code === "permission-denied" ? "Không có quyền lưu (kiểm tra luật bảo mật mới)." : "Không lưu được."); }
+    if (!recs.length) return toast("Chưa điền kết quả cho ao nào.");
+    const ponds = [...new Set(recs.map(x => x.pond))];
+    if (!confirm(`Lưu ${recs.length} kết quả ${ty === "pcr" ? "PCR" : "Vibrio"} ngày ${vnDate(d)} cho ${ponds.length} ao (${ponds.join(", ")})?`)) return;
+    btn.disabled = true;
+    try { const b = writeBatch(db); recs.forEach(x => b.set(doc(collection(db,"tests")), x)); await b.commit(); toast(`Đã lưu ${recs.length} kết quả cho ${ponds.length} ao.`); rerender(); }
+    catch (er) { console.error(er); toast(er.code === "permission-denied" ? "Không có quyền lưu kết quả." : "Không lưu được, kiểm tra mạng rồi thử lại."); }
+    finally { btn.disabled = false; }
     return;
   }
   const xd = e.target.closest("[data-xdel]");
