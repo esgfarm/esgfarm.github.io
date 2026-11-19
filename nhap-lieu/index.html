@@ -365,7 +365,7 @@ body.lgmode main.wrap{max-width:none;padding:0;margin:0}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { renderFarmMap, legendHTML } from "../so-do/farm-map.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider, setPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc, getDocs, query, where, orderBy, limit, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, terminate, clearIndexedDbPersistence, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc, getDocs, query, where, orderBy, limit, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ===== Cấu hình ===== */
 const FIREBASE_CONFIG = {
@@ -403,7 +403,7 @@ const LOW_FEED_KG = 200;
 
 const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
-const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }), experimentalAutoDetectLongPolling: true });
 
 /* ===== Tiện ích ===== */
 const $ = s => document.querySelector(s);
@@ -443,6 +443,7 @@ const sortedItems = grp => Object.entries(S.items).filter(([,v]) => !grp || (grp
 
 /* ===== Đăng nhập ===== */
 $("#logout").onclick = () => signOut(auth);
+document.addEventListener("click", async e => { if (!e.target.closest("[data-clearcache]")) return; try { await terminate(db); await clearIndexedDbPersistence(db); } catch (er) { console.warn(er); } location.reload(); });
 // Cài web lên màn hình chính (Android/Chrome hiện nút; iPhone dùng Chia sẻ → Thêm vào MH chính)
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 let installEv = null;
@@ -461,11 +462,25 @@ onAuthStateChanged(auth, u => {
   document.body.classList.remove("lgmode");
   $("#chpw").hidden = !(u.providerData || []).some(x => x.providerId === "password");
   if (isOwner()) { S.me = { role:"admin", name:u.displayName || "Quản lý", active:true }; startData(); }
-  unsubs.push(onSnapshot(doc(db, "users", S.email), s => {
+  S.meChecked = isOwner(); S.meErr = "";
+  unsubs.push(onSnapshot(doc(db, "users", S.email), { includeMetadataChanges:true }, s => {
     if (isOwner()) { if (s.exists()) S.me = Object.assign({}, s.data(), { role:"admin", active:true }); }
-    else { S.me = s.exists() ? s.data() : null; if (role() && !S.started) startData(); }
+    else { if (!s.exists() && s.metadata.fromCache) return; S.me = s.exists() ? s.data() : null; S.meChecked = true; if (role() && !S.started) startData(); }
     render();
-  }, e => { console.warn(e); S.me = isOwner() ? S.me : null; render(); }));
+  }, e => { console.warn(e); S.meErr = e.code || e.message; S.me = isOwner() ? S.me : null; S.meChecked = true; render(); }));
+  // Dự phòng: mạng chậm / bộ nhớ đệm lỗi thì hỏi thẳng máy chủ sau vài giây
+  const myUser = u;
+  setTimeout(async () => {
+    if (S.user !== myUser || role() || isOwner()) return;
+    try {
+      const tok = await myUser.getIdToken();
+      const r = await fetch(`https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/users/${encodeURIComponent(S.email)}`, { headers:{ Authorization:"Bearer " + tok } });
+      if (S.user !== myUser || role()) return;
+      if (r.status === 404) { S.me = null; S.meChecked = true; render(); return; }
+      const j = await r.json(), f = (j && j.fields) || {};
+      if (f.role) { S.me = { name:f.name?.stringValue || "", role:f.role.stringValue, active:f.active?.booleanValue !== false }; S.meChecked = true; S.meRest = true; if (role() && !S.started) startData(); render(); }
+    } catch (er) { console.warn(er); S.meChecked = true; S.meErr = S.meErr || "network"; render(); }
+  }, 5000);
   render();
 });
 
@@ -601,11 +616,15 @@ function rerender(){ UI.dirty = false; render(); }
 function render(){
   if (!S.user) return;
   if (UI.dirty) return;
+  if (!role() && !S.meChecked) { $("#tabs").hidden = true; $("#main").innerHTML = `<div class="login"><div class="panel"><h2>Đang kiểm tra quyền truy cập…</h2><p class="mut">Tài khoản <b>${esc(loginName(S.email))}</b>. Nếu chờ lâu, kiểm tra wifi/4G.</p></div></div>`; return; }
   if (!role()) {
     $("#tabs").hidden = true; document.body.classList.remove("side");
-    $("#main").innerHTML = `<div class="login"><div class="panel"><h2>Chưa được cấp quyền</h2>
+    $("#main").innerHTML = S.meErr && !(S.me && S.me.active === false) ? `<div class="login"><div class="panel"><h2>Chưa tải được quyền truy cập</h2>
+      <p>Tài khoản <b>${esc(loginName(S.email))}</b>. Có thể do mạng yếu hoặc bộ nhớ tạm của trình duyệt bị lỗi.</p>
+      <div class="acts" style="justify-content:center"><button class="btn p" onclick="location.reload()">Tải lại</button><button class="btn" data-clearcache>Xoá bộ nhớ tạm &amp; tải lại</button></div>
+      <p class="small mut">Mã lỗi: ${esc(S.meErr)}</p></div></div>` : `<div class="login"><div class="panel"><h2>Chưa được cấp quyền</h2>
       <p>Tài khoản <b>${esc(loginName(S.email))}</b> chưa có trong danh sách nhân viên${S.me && S.me.active===false ? " (tài khoản đang bị khoá)" : ""}.</p>
-      <p class="mut">Anh nhờ anh Hùng thêm email này ở mục Quản lý, rồi tải lại trang.</p></div></div>`;
+      <p class="mut">Anh/chị nhờ anh Hùng thêm tài khoản này ở mục Quản lý, rồi bấm Tải lại.</p><div class="acts" style="justify-content:center"><button class="btn p" onclick="location.reload()">Tải lại</button><button class="btn" data-clearcache>Xoá bộ nhớ tạm &amp; tải lại</button></div></div></div>`;
     return;
   }
   const tabs = tabsFor();
