@@ -1051,7 +1051,7 @@ async function saveMany(d, changes){
     if (ch.feeds) { (old.feeds || []).forEach(f => delta[f.item] = (delta[f.item] || 0) - (f.kg || 0)); feeds.forEach(f => delta[f.item] = (delta[f.item] || 0) + f.kg); }
     if (ch.treats) { (old.treats || []).forEach(x => delta[x.item] = (delta[x.item] || 0) - (x.qty || 0)); treats.forEach(x => delta[x.item] = (delta[x.item] || 0) + x.qty); }
     b.set(ref, { pond:p, date:d, cycleId: old.cycleId || (S.ponds[p] && S.ponds[p].cycleId) || null, feeds, treats, water, note: notes.join(" · "),
-      feedTotal: Math.round(feeds.reduce((a, f) => a + f.kg, 0) * 100) / 100, by:S.email, at:serverTimestamp() });
+      feedTotal: Math.round(feeds.reduce((a, f) => a + f.kg, 0) * 100) / 100, dead: old.dead ?? null, deadKg: old.deadKg ?? null, by:S.email, at:serverTimestamp() });
   }
   Object.entries(delta).forEach(([it, v]) => { if (Math.abs(v) > 1e-9 && S.items[it] && !S.items[it].noStock) b.update(doc(db, "stockItems", it), { qty: increment(-v) }); });
   await b.commit();
@@ -1258,8 +1258,13 @@ function vPondForm(p){
     <h3>Xử lý (vi sinh, khoáng, hóa chất)</h3>
     <div id="trows">${treats.map(t => trRow(t.item, t.qty)).join("")}</div>
     ${edit ? `<button class="btn s" data-add="tr">+ Thêm sản phẩm</button>` : ""}
+    <h3>Cân tôm & tôm hao</h3>
+    <div class="f2"><div><label>Cân tôm – Trọng lượng TB (g/con)</label><input name="w_abw" inputmode="decimal" placeholder="vd 8,5" value="${w.abw ?? ""}" ${ro}></div>
+      <div><label>Tôm hao – số con (ước)</label><input id="ldead" inputmode="numeric" value="${log.dead ?? ""}" ${ro}></div>
+      <div><label>Tôm hao – khối lượng (kg)</label><input id="ldeadkg" inputmode="decimal" value="${log.deadKg ?? ""}" ${ro}></div></div>
+    <p class="small mut">Chỉ nhập vào ngày có cân tôm hoặc có tôm hao; ngày khác để trống.</p>
     <h3>Chỉ số môi trường</h3>
-    <div class="f2">${WATER.map(f => `<div><label>${f.n}</label><input name="w_${f.k}" inputmode="decimal" value="${w[f.k] ?? ""}" ${ro}></div>`).join("")}</div>
+    <div class="f2">${WATER.filter(f => f.k !== "abw").map(f => `<div><label>${f.n}</label><input name="w_${f.k}" inputmode="decimal" value="${w[f.k] ?? ""}" ${ro}></div>`).join("")}</div>
     <h3>Ghi chú</h3>
     <textarea id="lnote" placeholder="Tình trạng tôm, bổ sung vitamin C, tỏi…" ${ro}>${esc(log.note || "")}</textarea>
     ${edit ? `<div class="acts"><button class="btn p" data-save-log>Lưu số liệu</button></div>
@@ -1353,12 +1358,15 @@ async function saveLog(btn){
     if (!it && isNaN(v)) continue; if (!it || isNaN(v) || v < 0) return toast("Dòng xử lý chưa đủ sản phẩm hoặc lượng."); treats.push({ item:it, qty:v }); }
   const water = {};
   for (const f of WATER) { const raw = $(`[name=w_${f.k}]`).value; if (raw.trim() === "") continue; const v = num(raw); if (isNaN(v)) return toast(`${f.n} không phải là số.`); water[f.k] = v; }
+  const deadRaw = $("#ldead").value.trim(), deadKgRaw = $("#ldeadkg").value.trim();
+  const dead = deadRaw === "" ? null : num(deadRaw), deadKg = deadKgRaw === "" ? null : num(deadKgRaw);
+  if ((dead != null && (isNaN(dead) || dead < 0)) || (deadKg != null && (isNaN(deadKg) || deadKg < 0))) return toast("Số tôm hao không hợp lệ.");
   let note = $("#lnote").value.trim();
   const noFeed = $("#nofeed").checked;
   if (noFeed && feeds.length) return toast("Đã chọn “không cho ăn” nhưng vẫn có dòng thức ăn.");
   note = note.split(" · ").filter(x => x && x !== NO_FEED).join(" · ");
   if (noFeed) note = note ? note + " · " + NO_FEED : NO_FEED;
-  if (!feeds.length && !treats.length && !Object.keys(water).length && !note) return toast("Chưa có số liệu nào để lưu.");
+  if (!feeds.length && !treats.length && !Object.keys(water).length && !note && dead == null && deadKg == null) return toast("Chưa có số liệu nào để lưu.");
   btn.disabled = true;
   try {
     const ref = doc(db, "logs", p + "_" + d);
@@ -1370,7 +1378,7 @@ async function saveLog(btn){
     treats.forEach(t => delta[t.item] = (delta[t.item]||0) + t.qty);
     const b = writeBatch(db);
     b.set(ref, { pond:p, date:d, cycleId:(S.ponds[p] && S.ponds[p].cycleId) || null, feeds, treats, water, note,
-      feedTotal: feeds.reduce((a,f)=>a+f.kg,0), by:S.email, at:serverTimestamp() });
+      feedTotal: feeds.reduce((a,f)=>a+f.kg,0), dead, deadKg, by:S.email, at:serverTimestamp() });
     Object.entries(delta).forEach(([it, v]) => { if (Math.abs(v) > 1e-9 && S.items[it] && !S.items[it].noStock) b.update(doc(db,"stockItems",it), { qty: increment(-v) }); });
     await b.commit();
     const al = waterAlerts(water);
