@@ -559,7 +559,8 @@ function syncLogs(){
   const f = wantLogsFrom(); if (logsFrom && f >= logsFrom) return;
   if (logsUnsub) logsUnsub(); else unsubs.push(() => { if (logsUnsub) logsUnsub(); logsUnsub = null; logsFrom = null; });
   logsFrom = f;
-  logsUnsub = onSnapshot(query(collection(db,"logs"), where("date", ">=", f)), s => { S.logs = {}; s.forEach(d => S.logs[d.id] = d.data()); render(); },
+  S.logsReady = false;
+  logsUnsub = onSnapshot(query(collection(db,"logs"), where("date", ">=", f)), { includeMetadataChanges:true }, s => { S.logs = {}; s.forEach(d => S.logs[d.id] = d.data()); if (!s.metadata.fromCache) S.logsReady = true; render(); },
     e => { console.warn(e); if (e.code === "permission-denied") { S.err = "Không có quyền đọc nhật ký ao."; render(); } });
 }
 function startData(){
@@ -931,8 +932,9 @@ function vQuick(){
   UI.qSel = (UI.qSel || []).filter(p => allP.includes(p));
   const ponds = allP.filter(p => !UI.qSel.length || UI.qSel.includes(p));
   if (!allP.length) return `<h2>Nhập nhanh</h2><div class="banner">${can.allPonds() ? "Chưa có ao đang nuôi." : "Anh/chị chưa được giao ao nào đang nuôi."}</div>`;
-  if (!UI.qDate) UI.qDate = quickDefaultDate();
-  const d = UI.qDate, tab = UI.qTab || "feed";
+  // Chỉ chọn ngày mặc định khi đã tải xong nhật ký từ máy chủ, tránh nhảy về ngày cũ do chưa có số liệu
+  if (!UI.qDate && S.logsReady) UI.qDate = quickDefaultDate();
+  const d = UI.qDate || addDays(today(), -1), tab = UI.qTab || "feed";
   const minD = can.allPonds() ? "" : addDays(today(), -13);
   const missing = ponds.filter(p => !fedDay(p, d)).length;
   const zones = [...new Set(allP.map(p => p[0]))];
@@ -1052,7 +1054,7 @@ async function saveMany(d, changes){
   await b.commit();
 }
 async function quickSave(btn){
-  const d = UI.qDate, tab = UI.qTab || "feed", changes = {};
+  const d = UI.qDate || $("#qdate").value, tab = UI.qTab || "feed", changes = {};
   if (d > today()) return toast("Không nhập cho ngày tương lai.");
   if (tab === "feed") {
     for (const tr of $$("tr[data-qp]")) {
