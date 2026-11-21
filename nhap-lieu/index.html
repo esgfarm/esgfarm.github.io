@@ -1314,8 +1314,8 @@ function vPondForm(p){
     <div class="f2">${WATER.filter(f => f.k !== "abw").map(f => `<div><label>${f.n}</label><input name="w_${f.k}" inputmode="decimal" value="${w[f.k] ?? ""}" ${ro}></div>`).join("")}</div>
     <h3>Ghi chú</h3>
     <textarea id="lnote" placeholder="Tình trạng tôm, bổ sung vitamin C, tỏi…" ${ro}>${esc(log.note || "")}</textarea>
-    ${edit ? `<div class="acts"><button class="btn p" data-save-log>Lưu số liệu</button></div>
-    <p class="small mut">Lưu xong, kho tự trừ lượng thức ăn và sản phẩm xử lý đã chọn.</p>` : ""}
+    ${edit ? `<div class="acts"><button class="btn p" data-save-log>Lưu số liệu</button>${log.date && can.cycle() ? `<button class="btn d" data-del-log>Xoá số liệu ngày này</button>` : ""}</div>
+    <p class="small mut">Lưu xong, kho tự trừ lượng thức ăn và sản phẩm xử lý đã chọn.${log.date ? (can.cycle() ? " Nhập nhầm ngày thì bấm “Xoá số liệu ngày này” (kho được cộng trả lại), rồi nhập lại vào đúng ngày." : " Nhập nhầm ngày thì báo Quản lý / Kỹ thuật xoá giúp, rồi nhập lại vào đúng ngày.") : ""}</p>` : ""}
   </div>
   <h3>14 lần nhập gần nhất</h3>
   ${hist.length ? `<div class="tw"><table><tr><th>Ngày</th><th class="r">Thức ăn (kg)</th><th>Xử lý</th>${WATER.slice(0,5).map(f=>`<th class="r">${f.n.split(" ")[0]}</th>`).join("")}<th>Người nhập</th></tr>
@@ -1393,9 +1393,29 @@ document.addEventListener("click", e => {
   const rm = e.target.closest("[data-rm]"); if (rm) { rm.closest(".row").remove(); return; }
   const dy = e.target.closest("[data-day]"); if (dy) { e.preventDefault(); UI.date = dy.dataset.day; UI.ptab = "form"; rerender(); window.scrollTo(0,0); return; }
   if (e.target.closest("[data-save-log]")) saveLog(e.target.closest("[data-save-log]"));
+  if (e.target.closest("[data-del-log]")) delLog(e.target.closest("[data-del-log]"));
 });
 document.addEventListener("change", e => { if (e.target.id === "ldate") { UI.date = e.target.value || today(); rerender(); } });
 
+/* Xoá nhật ký một ngày (nhập nhầm ngày): cộng trả kho phần thức ăn / sản phẩm xử lý đã trừ */
+async function delLog(btn){
+  const p = UI.pond, d = $("#ldate").value, ref = doc(db, "logs", p + "_" + d);
+  btn.disabled = true;
+  try {
+    const snap = await getDoc(ref); if (!snap.exists()) { toast("Ngày này chưa có số liệu."); return; }
+    const old = snap.data(), back = {};
+    (old.feeds||[]).forEach(f => back[f.item] = (back[f.item]||0) + (f.kg||0));
+    (old.treats||[]).forEach(t => back[t.item] = (back[t.item]||0) + (t.qty||0));
+    const lines = [(old.feeds||[]).length ? `Thức ăn ${fmt(old.feedTotal || 0)} kg` : "", (old.treats||[]).length ? `${old.treats.length} sản phẩm xử lý` : "", old.water && Object.keys(old.water).length ? "chỉ số môi trường / cân tôm" : "", old.deadKg ? `tôm hao ${fmt(old.deadKg)} kg` : "", old.note ? "ghi chú" : ""].filter(Boolean);
+    if (!confirm(`Xoá toàn bộ số liệu ao ${p} ngày ${vnDate(d)}?\n(${lines.join(", ") || "trống"})\n\nThức ăn và sản phẩm xử lý sẽ được cộng trả lại vào kho. Không hoàn tác được.`)) return;
+    const b = writeBatch(db);
+    b.delete(ref);
+    Object.entries(back).forEach(([it, v]) => { if (Math.abs(v) > 1e-9 && S.items[it] && !S.items[it].noStock) b.update(doc(db,"stockItems",it), { qty: increment(v) }); });
+    await b.commit();
+    toast(`Đã xoá số liệu ao ${p} ngày ${vnDate(d)}.`); rerender();
+  } catch (e) { console.error(e); toast(e.code === "permission-denied" ? "Chỉ Quản lý / Kỹ thuật được xoá số liệu." : "Không xoá được, kiểm tra mạng rồi thử lại."); }
+  finally { btn.disabled = false; }
+}
 async function saveLog(btn){
   const p = UI.pond, d = $("#ldate").value;
   if (!d) return toast("Chưa chọn ngày.");
