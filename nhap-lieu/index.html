@@ -926,7 +926,8 @@ document.addEventListener("mouseover", e => {
 });
 
 /* ===== Nhập nhanh nhiều ao ===== */
-function quickPonds(){ return POND_IDS.filter(p => activeCycle(p) && (can.allPonds() || (S.ponds[p] && S.ponds[p].owner === S.email))); }
+// Ao đang nuôi mà người dùng được nhập; có ngày d thì bỏ ao chưa thả (ngày d trước ngày thả / nhận san)
+function quickPonds(d){ return POND_IDS.filter(p => { const cy = activeCycle(p); return cy && (!d || cStart(cy) <= d) && (can.allPonds() || (S.ponds[p] && S.ponds[p].owner === S.email)); }); }
 function quickDefaultDate(){
   const miss = quickPonds().flatMap(p => missingDays(p)).sort();
   return miss[0] || today();
@@ -938,14 +939,17 @@ function feedSplit(l){
 }
 function prevLog(p, d){ for (let i = 1; i <= 7; i++) { const l = S.logs[p + "_" + addDays(d, -i)]; if (l && ((l.feeds || []).length || (l.note || "").includes(NO_FEED))) return l; } return null; }
 function vQuick(){
-  const allP = quickPonds();
+  const allP0 = quickPonds();
   if (UI.qSel === undefined) { try { UI.qSel = JSON.parse(localStorage.getItem("qsel:" + S.email) || "[]"); } catch (e) { UI.qSel = []; } }
-  UI.qSel = (UI.qSel || []).filter(p => allP.includes(p));
-  const ponds = allP.filter(p => !UI.qSel.length || UI.qSel.includes(p));
-  if (!allP.length) return `<h2>Nhập nhanh</h2><div class="banner">${can.allPonds() ? "Chưa có ao đang nuôi." : "Anh/chị chưa được giao ao nào đang nuôi."}</div>`;
+  UI.qSel = (UI.qSel || []).filter(p => allP0.includes(p));
+  if (!allP0.length) return `<h2>Nhập nhanh</h2><div class="banner">${can.allPonds() ? "Chưa có ao đang nuôi." : "Anh/chị chưa được giao ao nào đang nuôi."}</div>`;
   // Chỉ chọn ngày mặc định khi đã tải xong nhật ký từ máy chủ, tránh nhảy về ngày cũ do chưa có số liệu
   if (!UI.qDate && S.logsReady) UI.qDate = quickDefaultDate();
   const d = UI.qDate || addDays(today(), -1), tab = UI.qTab || "feed";
+  // Ao thả sau ngày đang chọn thì không hiện, không tính là "chưa nhập"
+  const allP = quickPonds(d), notYet = allP0.filter(p => !allP.includes(p));
+  const ponds = allP.filter(p => !UI.qSel.length || UI.qSel.includes(p));
+  if (!allP.length) return `<h2>Nhập nhanh</h2><div class="acts" style="margin:8px 0 12px"><div><label>Ngày</label><input type="date" id="qdate" value="${d}" max="${today()}" style="width:auto"></div></div><div class="banner">Ngày ${vnDate(d)} chưa có ao nào thả tôm (${notYet.join(", ")} thả sau ngày này).</div>`;
   const minD = can.allPonds() ? "" : addDays(today(), -13);
   const missing = ponds.filter(p => !fedDay(p, d)).length;
   const zones = [...new Set(allP.map(p => p[0]))];
@@ -1003,6 +1007,7 @@ function vQuick(){
     <div class="seg qseg">${[["feed","Lượng ăn"],["tr","Xử lý"],["env","Môi trường"],["can","Cân, hao, tỉa, san"]].map(([k, n]) => `<button data-qtab="${k}" class="${k === tab ? "on" : ""}">${n}</button>`).join("")}</div>
   </div>
   ${qbar}
+  ${notYet.length ? `<p class="small mut" style="margin:0 0 8px">Ao ${notYet.map(p => `${p} (thả ${shortDate(cStart(activeCycle(p)))})`).join(", ")} chưa thả vào ngày ${vnDate(d)} nên không hiện, không tính là thiếu số liệu.</p>` : ""}
   ${tab === "feed" ? `<div class="banner ${missing ? "" : "okb"}">${missing ? `Ngày ${vnDate(d)} còn <b>${missing}/${ponds.length}</b> ao chưa nhập lượng ăn.` : `Ngày ${vnDate(d)} đã nhập đủ ${ponds.length} ao.`}</div>` : ""}
   ${body}
   <div class="sticky-save">
@@ -1034,7 +1039,7 @@ document.addEventListener("click", e => {
   const qf = e.target.closest("[data-qf],[data-qz],[data-qpick],[data-qmiss]");
   if (qf) {
     if (UI.dirty && !confirm("Có số liệu đang nhập dở chưa lưu. Đổi bộ lọc sẽ mất số đó. Tiếp tục?")) return;
-    const allP = quickPonds(); let sel = (UI.qSel || []).slice();
+    const allP = quickPonds(UI.qDate || addDays(today(), -1)); let sel = (UI.qSel || []).slice();
     if (qf.dataset.qf) sel = [];
     else if (qf.dataset.qz) sel = allP.filter(p => p[0] === qf.dataset.qz);
     else if (qf.dataset.qpick) { const p = qf.dataset.qpick; sel = sel.includes(p) ? sel.filter(x => x !== p) : sel.concat(p); if (sel.length === allP.length) sel = []; }
