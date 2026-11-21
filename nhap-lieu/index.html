@@ -1795,12 +1795,12 @@ function vKho(){
   ${edit && items.length ? `<div class="panel"><h3 style="margin-top:0">Nhập / xuất / kiểm kê</h3>
     <div class="f2">
       <div><label>Loại</label><select id="mtype"><option value="in">Nhập kho</option><option value="out">Xuất kho (khác cho ao)</option><option value="adj">Kiểm kê (nhập số tồn thực tế)</option></select></div>
-      <div><label>Hàng</label><select id="mitem">${itemOptions("", "").replace(/<option value="([^"]+)"[^>]*>[^<]*<\/option>/g, (m, id) => S.items[id] && S.items[id].noStock ? "" : m)}</select></div>
-      <div><label id="mqlbl">Số lượng</label><input id="mqty" inputmode="decimal"></div>
       <div><label>Ngày</label><input type="date" id="mdate" value="${today()}" max="${today()}"></div>
-      <div><label>Đơn giá nhập (đ, nếu có)</label><input id="mprice" inputmode="numeric"></div>
-      <div><label>Ghi chú</label><input id="mnote" placeholder="Nhà cung cấp, số phiếu…"></div></div>
-    <div class="acts"><button class="btn p" data-msave>Lưu</button></div></div>` : ""}
+      <div><label>Ghi chú chung</label><input id="mnote" placeholder="Nhà cung cấp, số phiếu…"></div></div>
+    <div class="tw" style="margin-top:10px"><table class="qt mvt"><tr><th>Hàng</th><th class="r" id="mqlbl">Số lượng</th><th class="r mpc">Đơn giá (đ)</th><th class="r mpc">Thành tiền</th><th class="r">Tồn hiện tại</th><th></th></tr>
+      ${[0,1,2].map(() => mvRow()).join("")}</table></div>
+    <div class="acts"><button class="btn" data-madd>+ Thêm dòng</button><button class="btn p" data-msave>Lưu phiếu</button><span class="small mut" id="mtot"></span></div>
+    <p class="small mut">Mỗi dòng một mặt hàng, dòng để trống sẽ bỏ qua. Đơn giá nhập (nếu có) được lưu làm giá nhập gần nhất của hàng đó.</p></div>` : ""}
   ${edit ? `<details class="panel"><summary><b>Thêm hàng mới vào danh mục</b></summary>
     <div class="f2" style="margin-top:10px"><div><label>Tên hàng</label><input id="iname"></div>
     <div><label>Nhóm</label><select id="igroup">${Object.entries(GROUPS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></div>
@@ -1813,20 +1813,56 @@ function vKho(){
   ${S.moves.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Loại</th><th>Hàng</th><th class="r">Lượng</th><th class="r">Đơn giá</th><th>Ghi chú</th><th>Người nhập</th></tr>
   ${S.moves.slice(0,40).map(m=>`<tr><td>${vnDate(m.date)}</td><td>${MV[m.type]||m.type}</td><td>${esc(itemName(m.item))}</td><td class="r num">${m.type==="out"?"−":m.type==="adj"&&m.qty<0?"":"+"}${fmt(m.qty)}</td><td class="r num">${m.price?money(m.price):"–"}</td><td class="small">${esc(m.note||"")}</td><td class="small mut">${esc(userName(m.by))}</td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có.</p>`}`;
 }
-document.addEventListener("change", e => { if (e.target.id === "mtype") $("#mqlbl").textContent = e.target.value === "adj" ? "Số tồn thực tế đếm được" : "Số lượng"; });
+function mvRow(){ return `<tr data-mv><td><select class="mit">${itemOptions("", "").replace(/<option value="([^"]+)"[^>]*>[^<]*<\/option>/g, (m, id) => S.items[id] && S.items[id].noStock ? "" : m)}</select></td><td class="r"><input class="w mq" inputmode="decimal"></td><td class="r mpc"><input class="w pr mpr" inputmode="numeric"></td><td class="r num mpc" data-mamt>–</td><td class="r num small" data-mcur>–</td><td><button class="btn s" data-mdel title="Bỏ dòng">✕</button></td></tr>`; }
+function mvCalc(){
+  const ty = $("#mtype") && $("#mtype").value; let tot = 0, n = 0;
+  document.querySelectorAll("tr[data-mv]").forEach(r => {
+    const it = r.querySelector(".mit").value, q = num(r.querySelector(".mq").value), pr = num(r.querySelector(".mpr").value.replace(/\./g, ""));
+    r.querySelector("[data-mcur]").textContent = it && S.items[it] ? `${fmt(S.items[it].qty || 0)} ${S.items[it].unit || ""}` : "–";
+    const amt = !isNaN(q) && !isNaN(pr) && q > 0 && pr > 0 ? Math.round(q * pr) : 0;
+    r.querySelector("[data-mamt]").textContent = amt ? nf0.format(amt) : "–"; tot += amt; if (it && !isNaN(q)) n++;
+  });
+  const el = $("#mtot"); if (el) el.textContent = n ? `${n} mặt hàng${ty === "in" && tot ? ` · tổng ${nf0.format(tot)} đ` : ""}` : "";
+}
+document.addEventListener("change", e => {
+  if (e.target.id === "mtype") { const adj = e.target.value === "adj"; $("#mqlbl").textContent = adj ? "Tồn thực tế đếm được" : "Số lượng"; document.querySelectorAll(".mvt .mpc").forEach(x => x.hidden = e.target.value !== "in"); mvCalc(); }
+  if (e.target.matches(".mvt .mit")) mvCalc();
+});
+document.addEventListener("input", e => { if (e.target.closest(".mvt")) mvCalc(); });
 document.addEventListener("click", async e => {
+  if (e.target.closest("[data-madd]")) { const t = document.querySelector(".mvt tbody") || document.querySelector(".mvt"); t.insertAdjacentHTML("beforeend", mvRow()); if ($("#mtype").value !== "in") t.lastElementChild.querySelectorAll(".mpc").forEach(x => x.hidden = true); return; }
+  if (e.target.closest("[data-mdel]")) { const r = e.target.closest("tr"); if (document.querySelectorAll("tr[data-mv]").length > 1) r.remove(); else r.querySelectorAll("input,select").forEach(x => x.value = ""); mvCalc(); return; }
   if (e.target.closest("[data-msave]")) {
-    const type = $("#mtype").value, it = $("#mitem").value, q = num($("#mqty").value), d = $("#mdate").value, price = num($("#mprice").value);
-    if (!it || isNaN(q) || q < 0 || !d) return toast("Cần chọn hàng, số lượng và ngày.");
-    if (type !== "adj" && q === 0) return toast("Số lượng phải lớn hơn 0.");
-    const cur = S.items[it].qty || 0;
-    const change = type === "in" ? q : type === "out" ? -q : q - cur;
-    if (type === "adj" && !confirm(`Tồn trên hệ thống: ${fmt(cur)}. Thực tế: ${fmt(q)}. Chênh lệch ${change>=0?"+":""}${fmt(change)}. Lưu kiểm kê?`)) return;
-    const b = writeBatch(db);
-    b.set(doc(collection(db,"stockMoves")), { type, item:it, qty: type==="adj" ? change : q, date:d, price:isNaN(price)?null:price, note:$("#mnote").value.trim(), by:S.email, at:serverTimestamp() });
-    const upd = { qty: increment(change) }; if (type === "in" && !isNaN(price) && price > 0) upd.price = price;
-    b.update(doc(db,"stockItems",it), upd);
-    try { await b.commit(); toast("Đã lưu phiếu kho."); rerender(); } catch (er) { console.error(er); toast("Không lưu được."); }
+    const btn = e.target.closest("[data-msave]"), type = $("#mtype").value, d = $("#mdate").value, note = $("#mnote").value.trim();
+    if (!d) return toast("Chưa chọn ngày.");
+    if (d > today()) return toast("Không nhập cho ngày tương lai.");
+    const lines = [];
+    for (const r of document.querySelectorAll("tr[data-mv]")) {
+      const it = r.querySelector(".mit").value, qr = r.querySelector(".mq").value.trim(), prr = r.querySelector(".mpr").value.trim();
+      if (!it && !qr && !prr) continue;
+      if (!it) return toast("Có dòng chưa chọn hàng.");
+      const q = num(qr), price = type === "in" && prr ? num(prr.replace(/\./g, "")) : null;
+      if (isNaN(q) || q < 0 || (type !== "adj" && q === 0)) return toast(`${itemName(it)}: số lượng không hợp lệ.`);
+      if (price != null && (isNaN(price) || price <= 0)) return toast(`${itemName(it)}: đơn giá không hợp lệ.`);
+      if (type === "adj" && lines.some(x => x.it === it)) return toast(`${itemName(it)} bị chọn 2 lần trong phiếu kiểm kê.`);
+      const cur = S.items[it].qty || 0;
+      lines.push({ it, q, price, cur, change: type === "in" ? q : type === "out" ? -q : q - cur });
+    }
+    if (!lines.length) return toast("Chưa nhập mặt hàng nào.");
+    const tot = lines.reduce((a, x) => a + (x.price ? x.q * x.price : 0), 0);
+    const msg = lines.map(x => type === "adj" ? `• ${itemName(x.it)}: hệ thống ${fmt(x.cur)} → thực tế ${fmt(x.q)} (${x.change >= 0 ? "+" : ""}${fmt(x.change)})` : `• ${itemName(x.it)}: ${type === "out" ? "−" : "+"}${fmt(x.q)} ${itemUnit(x.it)}${x.price ? ` × ${nf0.format(x.price)} đ` : ""}`).join("\n");
+    if (!confirm(`${({ in:"Nhập kho", out:"Xuất kho", adj:"Kiểm kê" })[type]} ngày ${vnDate(d)} – ${lines.length} mặt hàng:\n${msg}${tot ? `\nTổng tiền: ${nf0.format(Math.round(tot))} đ` : ""}\n\nLưu phiếu?`)) return;
+    btn.disabled = true;
+    try {
+      const b = writeBatch(db);
+      lines.forEach(x => {
+        b.set(doc(collection(db,"stockMoves")), { type, item:x.it, qty: type === "adj" ? x.change : x.q, date:d, price:x.price, note, by:S.email, at:serverTimestamp() });
+        const upd = { qty: increment(x.change) }; if (x.price) upd.price = x.price;
+        b.update(doc(db,"stockItems",x.it), upd);
+      });
+      await b.commit(); toast(`Đã lưu phiếu kho ${lines.length} mặt hàng.`); rerender();
+    } catch (er) { console.error(er); toast(er.code === "permission-denied" ? "Không có quyền lưu phiếu kho." : "Không lưu được, kiểm tra mạng rồi thử lại."); }
+    finally { btn.disabled = false; }
     return;
   }
   if (e.target.closest("[data-isave]")) {
