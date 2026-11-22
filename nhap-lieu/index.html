@@ -1086,7 +1086,8 @@ async function saveTias(d, tias){
   });
   await b.commit();
 }
-const tiaDay = (p, d) => { const h = S.harv.filter(x => x.pond === p && x.date === d && (x.type === "tia" || x.type === "san")); return h.length ? `<div class="small mut" style="white-space:nowrap">Đã ${h.map(x => (x.type === "san" ? "san " : "tỉa ") + fmt(x.kg) + " kg").join(", ")}</div>` : ""; };
+// Các lần tỉa/san đã lưu trong ngày; người nhập (hoặc Quản lý/Kỹ thuật) có nút ✕ để xoá nếu nhập nhầm
+const tiaDay = (p, d) => { const h = S.harv.filter(x => x.pond === p && x.date === d && (x.type === "tia" || x.type === "san")); return h.length ? `<div class="small mut" style="white-space:nowrap">${h.map(x => `Đã ${x.type === "san" ? "san" : "tỉa"} ${fmt(x.kg)} kg${can.cycle() || x.by === S.email ? ` <button class="btn s d" style="padding:1px 7px;font-size:12px" data-hdel="${x.id}" title="Xoá lần ${x.type === "san" ? "san" : "tỉa"} này">✕</button>` : ""}`).join("<br>")}</div>` : ""; };
 document.addEventListener("change", e => { if (!e.target.matches("[name=c_ttype]")) return; const tr = e.target.closest("tr"), san = e.target.value === "san";
   tr.querySelector("[name=c_tprice]").disabled = san; if (san) tr.querySelector("[name=c_tprice]").value = ""; tr.querySelector("[name=c_tto]").disabled = !san; if (!san) tr.querySelector("[name=c_tto]").value = ""; });
 async function quickSave(btn){
@@ -1546,7 +1547,8 @@ document.addEventListener("click", async e => {
     return;
   }
   const hd = e.target.closest("[data-hdel]");
-  if (hd && confirm("Xoá dòng thu hoạch này? Khoản thu bán tôm tự ghi kèm (nếu có) cũng bị xoá.")) { try { const id = hd.dataset.hdel, h = S.harv.find(x => x.id === id), b = writeBatch(db); b.delete(doc(db,"harvests",id)); if (h && h.price) b.delete(doc(db,"finance","harv_" + id)); await b.commit(); toast("Đã xoá."); } catch (er) { console.error(er); toast("Không xoá được."); } }
+  const hdx = hd && S.harv.find(x => x.id === hd.dataset.hdel);
+  if (hd && confirm(`Xoá ${hdx ? `${(HARV_TYPES[hdx.type] || hdx.type).toLowerCase()} ao ${hdx.pond} ngày ${vnDate(hdx.date)}: ${fmt(hdx.kg)} kg` : "dòng thu hoạch này"}?${hdx && hdx.price ? " Khoản thu bán tôm tự ghi kèm cũng bị xoá." : ""}`)) { try { const id = hd.dataset.hdel, h = S.harv.find(x => x.id === id), b = writeBatch(db); b.delete(doc(db,"harvests",id)); if (h && h.price) b.delete(doc(db,"finance","harv_" + id)); await b.commit(); toast("Đã xoá."); rerender(); } catch (er) { console.error(er); toast(er.code === "permission-denied" ? "Chỉ người đã nhập hoặc Quản lý / Kỹ thuật được xoá." : "Không xoá được."); } }
 });
 
 /* Khung nhập thu hoạch: dùng ở Vụ nuôi (Quản lý/Kỹ thuật, chọn ao) và trong trang từng ao (người phụ trách: chỉ thu tỉa) */
