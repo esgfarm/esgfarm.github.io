@@ -663,6 +663,16 @@ $("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-ta
 
 /* ===== Tổng quan ===== */
 // Ao tính là cần cho ăn trong ngày nếu đã thả và chưa kết thúc vụ (ngày thu hoạch/kết thúc không tính)
+// Size của lần thu/san: lấy số đã nhập; chưa nhập thì suy từ cân tôm (TL TB) cùng ngày ở ao đó hoặc ao nhận san, hoặc lần cân gần nhất trước đó ≤ 7 ngày
+function hSize(h){
+  if (h.size) return h.size;
+  for (const p of [h.toPond, h.pond].filter(Boolean)) {
+    const w = Object.values(S.logs).filter(l => l.pond === p && l.date <= h.date && l.date >= addDays(h.date, -7) && l.water && l.water.abw > 0).sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (w) return Math.round(1000 / w.water.abw);
+  }
+  return null;
+}
+const hSizeTxt = h => h.size ? fmt(h.size) : hSize(h) ? `≈${fmt(hSize(h))}` : "–";
 const cStart = c => c.startDate || c.stockDate; // vụ nhận tôm san: tính số liệu từ ngày nhận, DOC vẫn theo ngày thả
 function cycleOn(c, d){ return cStart(c) <= d && (!c.endDate || c.endDate > d); }
 // Ước tính theo vụ, cùng cách tính với app cũ: tỷ lệ sống ước tính 80–90%
@@ -676,7 +686,7 @@ function cycleStats(cy){
   const a1 = ab.at(-1), a0 = ab.at(-2);
   const adg = a1 && a0 ? (a1.water.abw - a0.water.abw) / daysBetween(a0.date, a1.date) : null;
   const hv = S.harv.filter(h => h.cycleId === cy.id);
-  const hKg = hv.reduce((a, h) => a + (h.kg || 0), 0), hCnt = hv.reduce((a, h) => a + (h.kg || 0) * (h.size || 0), 0);
+  const hKg = hv.reduce((a, h) => a + (h.kg || 0), 0), hCnt = hv.reduce((a, h) => a + (h.kg || 0) * (hSize(h) || 0), 0);
   let bio = null, fcr = null;
   if (a1 && cy.stockCount) {
     const alive = sr => Math.max(0, cy.stockCount * sr - hCnt);
@@ -1386,7 +1396,7 @@ function vPondInfo(p, cy, hist){
       ${tests.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Loại</th><th>Chỉ tiêu</th><th>Kết quả</th></tr>${tests.slice(0, 10).map(x => `<tr><td>${vnDate(x.date)}</td><td class="small">${x.type === "pcr" ? "PCR" : "Vibrio"}</td><td>${esc(x.target || (x.type === "pcr" ? "" : "Vibrio"))}</td>
         <td>${x.type === "pcr" ? (x.result === "susp" ? `<span class="chip y">Nghi ngờ</span>` : x.result === "pos" ? `<span class="chip rr">Dương tính${x.ct != null ? " · Ct " + fmt(x.ct) : ""}</span>` : `<span class="chip g">Âm tính</span>`) : `<span class="small">Vàng ${vib(x.yellow, x.yLt)} · Xanh ${vib(x.green, x.gLt)} · Tổng ${vib(x.total, x.tLt)} CFU/ml</span>`}</td></tr>`).join("")}</table></div>` : `<p class="mut small">Chưa có kết quả.</p>`}</div>
   </div>
-  ${hv.length ? `<div class="panel"><div class="ph"><b class="t ti" style="--c:#c47f00">${hi("net")}Thu hoạch / san tôm</b></div><div class="tw"><table><tr><th>Ngày</th><th>Hình thức</th><th class="r">kg</th><th class="r">Size</th><th>Ghi chú</th></tr>${hv.map(h => `<tr><td>${vnDate(h.date)}</td><td>${HARV_TYPES[h.type] || esc(h.type)}</td><td class="r num">${fmt(h.kg)}</td><td class="r num">${fmt(h.size)}</td><td class="small">${esc(h.note || "")}</td></tr>`).join("")}</table></div></div>` : ""}
+  ${hv.length ? `<div class="panel"><div class="ph"><b class="t ti" style="--c:#c47f00">${hi("net")}Thu hoạch / san tôm</b></div><div class="tw"><table><tr><th>Ngày</th><th>Hình thức</th><th class="r">kg</th><th class="r">Size</th><th>Ghi chú</th></tr>${hv.map(h => `<tr><td>${vnDate(h.date)}</td><td>${HARV_TYPES[h.type] || esc(h.type)}</td><td class="r num">${fmt(h.kg)}</td><td class="r num">${hSizeTxt(h)}</td><td class="small">${esc(h.note || "")}</td></tr>`).join("")}</table></div></div>` : ""}
   <div class="panel"><div class="ph"><b class="t ti" style="--c:#2a78d6">${hi("list")}Nhật ký gần đây</b><span class="small mut">bấm ngày để xem/sửa</span></div>
     ${hist.length ? `<div class="tw"><table><tr><th>Ngày</th><th class="r">Thức ăn (kg)</th><th>Xử lý</th><th>Ghi chú</th></tr>${hist.map(l => `<tr><td><a href="#" data-day="${l.date}">${vnDate(l.date)}</a></td><td class="r num">${(l.note || "").includes(NO_FEED) && !(l.feeds || []).length ? `<span class="small mut">Không cho ăn</span>` : fmt(l.feedTotal || 0)}</td><td class="small">${esc((l.treats || []).map(t => itemName(t.item)).join(", ")) || "–"}</td><td class="small wrap">${esc(l.note || "")}</td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có số liệu.</p>`}</div>
   ${can.pond(p) ? `<div class="acts"><button class="btn p" data-ptab="form">Nhập số liệu hôm nay</button></div>` : ""}`;
@@ -1491,7 +1501,7 @@ function vVu(){
   ${harvForm()}
   <h3>Thu hoạch gần đây</h3>
   ${hv.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Ao</th><th>Hình thức</th><th class="r">kg</th><th class="r">Size</th><th class="r">Giá (đ/kg)</th><th class="r">Thành tiền</th><th>Ghi chú</th><th>Người nhập</th><th></th></tr>
-  ${hv.map(h=>`<tr><td>${vnDate(h.date)}</td><td>${esc(h.pond)}</td><td>${HARV_TYPES[h.type]||esc(h.type)}</td><td class="r num">${fmt(h.kg)}</td><td class="r num">${fmt(h.size)}</td><td class="r num">${h.price ? nf0.format(h.price) : "–"}</td><td class="r num">${h.price ? nf0.format(Math.round(h.kg * h.price)) : "–"}</td><td class="small">${esc(h.note||"")}</td><td class="small mut">${esc(userName(h.by))}</td><td><button class="btn s d" data-hdel="${h.id}">Xoá</button></td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có.</p>`}`;
+  ${hv.map(h=>`<tr><td>${vnDate(h.date)}</td><td>${esc(h.pond)}</td><td>${HARV_TYPES[h.type]||esc(h.type)}</td><td class="r num">${fmt(h.kg)}</td><td class="r num" title="≈: suy từ cân tôm">${hSizeTxt(h)}</td><td class="r num">${h.price ? nf0.format(h.price) : "–"}</td><td class="r num">${h.price ? nf0.format(Math.round(h.kg * h.price)) : "–"}</td><td class="small">${esc(h.note||"")}</td><td class="small mut">${esc(userName(h.by))}</td><td><button class="btn s d" data-hdel="${h.id}">Xoá</button></td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có.</p>`}`;
 }
 document.addEventListener("change", async e => {
   const o = e.target.closest("[data-owner]"); if (!o) return;
@@ -1831,7 +1841,7 @@ function cSrcUpd(){
   const scy = activeCycle(src);
   // Gợi ý số con từ lần san đã nhập ở ao gốc (kg × size) cùng ngày, sang đúng ao này
   const hs = S.harv.filter(h => h.pond === src && h.type === "san" && h.date === d && (!h.toPond || h.toPond === p));
-  const kg = hs.reduce((a, h) => a + (h.kg || 0), 0), con = hs.reduce((a, h) => a + (h.kg && h.size ? h.kg * h.size : 0), 0);
+  const kg = hs.reduce((a, h) => a + (h.kg || 0), 0), con = hs.reduce((a, h) => a + (h.kg && hSize(h) ? h.kg * hSize(h) : 0), 0);
   if (con && !$("#ccount").value) $("#ccount").value = Math.round(con);
   $("#chint").innerHTML = `DOC theo ngày thả của ao ${src}: ${vnDate(scy.stockDate)} (hôm nay DOC ${daysBetween(scy.stockDate, today())}). Lượng ăn, môi trường… của ao ${esc(p)} tính từ ngày nhận san.` + (hs.length ? ` Ao ${src} đã ghi san ${fmt(kg)} kg ngày ${vnDate(d)}${con ? ` ≈ ${nf0.format(Math.round(con))} con` : " (chưa có size để ước số con)"}.` : ` Chưa thấy lần san nào của ao ${src} ngày ${vnDate(d)} – nhớ nhập san ở ao ${src} (Nhập nhanh → Cân, hao, tỉa, san).`);
 }
