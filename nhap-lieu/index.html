@@ -1480,9 +1480,11 @@ function vVu(){
   return `<h2>Vụ nuôi & phân công ao</h2>
   ${!Object.keys(S.ponds).length ? `<div class="banner">Chưa có danh sách ao.</div>` : ""}
   ${sp ? `<div class="panel"><h3 style="margin-top:0">Bắt đầu vụ mới – Ao ${esc(sp)}</h3>
-    <div class="f2"><div><label>Ngày thả</label><input type="date" id="cdate" value="${t}"></div>
-    <div><label>Số con thả</label><input id="ccount" inputmode="numeric"></div>
+    <div class="f2"><div><label>Nguồn tôm</label><select id="csrc"><option value="">Thả giống mới</option>${active.filter(x => x !== sp).map(x => `<option value="${x}">Nhận tôm san từ ao ${x} (thả ${shortDate(activeCycle(x).stockDate)})</option>`).join("")}</select></div>
+    <div><label id="cdlbl">Ngày thả</label><input type="date" id="cdate" value="${t}" max="${t}"></div>
+    <div><label id="cnlbl">Số con thả</label><input id="ccount" inputmode="numeric"></div>
     <div><label>Nguồn giống / ghi chú</label><input id="cnote"></div></div>
+    <p class="small mut" id="chint">Thả giống mới: DOC tính từ ngày thả.</p>
     <div class="acts"><button class="btn p" data-cstart>Lưu</button><button class="btn" data-ccancel>Huỷ</button></div></div>` : ""}
   <p class="small mut">Chọn người phụ trách ở cột thứ 2, hệ thống lưu ngay. Người phụ trách chỉ nhập được ao của mình.</p>
   <div class="tw"><table><tr><th>Ao</th><th>Người phụ trách</th><th>Trạng thái</th><th>Vụ hiện tại</th><th></th></tr>${rows}</table></div>
@@ -1501,11 +1503,18 @@ document.addEventListener("click", async e => {
   const st = e.target.closest("[data-start]"); if (st) { UI.startPond = st.dataset.start; rerender(); window.scrollTo(0,0); return; }
   if (e.target.closest("[data-ccancel]")) { UI.startPond = null; rerender(); return; }
   if (e.target.closest("[data-cstart]")) {
-    const p = UI.startPond, d = $("#cdate").value, n = num($("#ccount").value);
-    if (!d || isNaN(n) || n <= 0) return toast("Cần ngày thả và số con thả.");
+    const p = UI.startPond, d = $("#cdate").value, n = num($("#ccount").value), src = $("#csrc").value, scy = src ? activeCycle(src) : null;
+    if (!d || isNaN(n) || n <= 0) return toast(src ? "Cần ngày nhận san và số con nhận." : "Cần ngày thả và số con thả.");
+    if (d > today()) return toast("Không chọn ngày tương lai.");
+    if (src && !scy) return toast(`Ao ${src} không còn vụ đang nuôi.`);
+    if (src && d < scy.stockDate) return toast(`Ngày nhận san không được trước ngày thả của ao ${src}.`);
     const id = p + "_" + d.replaceAll("-", "");
+    // Vụ nhận tôm san: DOC theo ngày thả của ao gốc (stockDate), số liệu ao này tính từ ngày nhận (startDate)
+    const data = src ? { pond:p, stockDate:scy.stockDate, startDate:d, fromPond:src, fromCycle:scy.id, stockCount:n, note:$("#cnote").value.trim() || `Nhận tôm san từ ao ${src}`, status:"active", by:S.email, at:serverTimestamp() }
+                     : { pond:p, stockDate:d, stockCount:n, note:$("#cnote").value.trim(), status:"active", by:S.email, at:serverTimestamp() };
+    if (src && !confirm(`Mở vụ ao ${p} nhận tôm san từ ${src} ngày ${vnDate(d)}, ${fmt(n)} con.\nDOC tính theo ngày thả của ${src} (${vnDate(scy.stockDate)}) → hôm nay DOC ${daysBetween(scy.stockDate, today())}.`)) return;
     const b = writeBatch(db);
-    b.set(doc(db,"cycles",id), { pond:p, stockDate:d, stockCount:n, note:$("#cnote").value.trim(), status:"active", by:S.email, at:serverTimestamp() });
+    b.set(doc(db,"cycles",id), data);
     b.update(doc(db,"ponds",p), { cycleId:id });
     try { await b.commit(); UI.startPond = null; toast("Đã bắt đầu vụ ao " + p); rerender(); } catch (er) { console.error(er); toast("Không lưu được."); }
     return;
@@ -1815,6 +1824,18 @@ function vKho(){
   ${S.moves.length ? `<div class="tw"><table><tr><th>Ngày</th><th>Loại</th><th>Hàng</th><th class="r">Lượng</th><th class="r">Đơn giá</th><th>Ghi chú</th><th>Người nhập</th></tr>
   ${S.moves.slice(0,40).map(m=>`<tr><td>${vnDate(m.date)}</td><td>${MV[m.type]||m.type}</td><td>${esc(itemName(m.item))}</td><td class="r num">${m.type==="out"?"−":m.type==="adj"&&m.qty<0?"":"+"}${fmt(m.qty)}</td><td class="r num">${m.price?money(m.price):"–"}</td><td class="small">${esc(m.note||"")}</td><td class="small mut">${esc(userName(m.by))}</td></tr>`).join("")}</table></div>` : `<p class="mut">Chưa có.</p>`}`;
 }
+function cSrcUpd(){
+  const sel = $("#csrc"); if (!sel) return; const src = sel.value, d = $("#cdate").value, p = UI.startPond;
+  $("#cdlbl").textContent = src ? "Ngày nhận san" : "Ngày thả"; $("#cnlbl").textContent = src ? "Số con nhận (ước tính)" : "Số con thả";
+  if (!src) { $("#chint").textContent = "Thả giống mới: DOC tính từ ngày thả."; return; }
+  const scy = activeCycle(src);
+  // Gợi ý số con từ lần san đã nhập ở ao gốc (kg × size) cùng ngày, sang đúng ao này
+  const hs = S.harv.filter(h => h.pond === src && h.type === "san" && h.date === d && (!h.toPond || h.toPond === p));
+  const kg = hs.reduce((a, h) => a + (h.kg || 0), 0), con = hs.reduce((a, h) => a + (h.kg && h.size ? h.kg * h.size : 0), 0);
+  if (con && !$("#ccount").value) $("#ccount").value = Math.round(con);
+  $("#chint").innerHTML = `DOC theo ngày thả của ao ${src}: ${vnDate(scy.stockDate)} (hôm nay DOC ${daysBetween(scy.stockDate, today())}). Lượng ăn, môi trường… của ao ${esc(p)} tính từ ngày nhận san.` + (hs.length ? ` Ao ${src} đã ghi san ${fmt(kg)} kg ngày ${vnDate(d)}${con ? ` ≈ ${nf0.format(Math.round(con))} con` : " (chưa có size để ước số con)"}.` : ` Chưa thấy lần san nào của ao ${src} ngày ${vnDate(d)} – nhớ nhập san ở ao ${src} (Nhập nhanh → Cân, hao, tỉa, san).`);
+}
+document.addEventListener("change", e => { if (e.target.id === "csrc" || (e.target.id === "cdate" && $("#csrc"))) cSrcUpd(); });
 function mvRow(){ return `<tr data-mv><td><select class="mit">${itemOptions("", "").replace(/<option value="([^"]+)"[^>]*>[^<]*<\/option>/g, (m, id) => S.items[id] && S.items[id].noStock ? "" : m)}</select></td><td class="r"><input class="w mq" inputmode="decimal"></td><td class="r mpc"><input class="w pr mpr" inputmode="numeric"></td><td class="r num mpc" data-mamt>–</td><td class="r num small" data-mcur>–</td><td><button class="btn s" data-mdel title="Bỏ dòng">✕</button></td></tr>`; }
 function mvCalc(){
   const ty = $("#mtype") && $("#mtype").value; let tot = 0, n = 0;
