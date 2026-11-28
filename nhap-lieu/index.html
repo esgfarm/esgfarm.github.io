@@ -1001,9 +1001,9 @@ function vQuick(){
     ${ponds.map(p => { const l = S.logs[p + "_" + d] || {}, w = l.water || {};
       const prev = Object.values(S.logs).filter(x => x.pond === p && x.date < d && x.water && x.water.abw != null).sort((a, b) => b.date.localeCompare(a.date))[0];
       return `<tr data-qc="${p}"><td><b>${p}</b></td><td class="r"><input class="w" name="c_abw" inputmode="decimal" value="${w.abw ?? ""}" data-orig="${w.abw ?? ""}"></td><td class="r"><input class="w" name="c_dead" inputmode="decimal" value="${l.deadKg ?? ""}" data-orig="${l.deadKg ?? ""}"></td>
-        <td class="qtia"><select name="c_ttype" class="tt"><option value="tia">Thu tỉa</option><option value="san">San tôm</option></select></td><td class="r qtia"><input class="w" name="c_tkg" inputmode="decimal" data-orig="">${tiaDay(p, d)}</td><td class="r qtia"><input class="w" name="c_tsize" inputmode="decimal" data-orig="" placeholder="${(w.abw || (prev && prev.water.abw)) ? "≈" + Math.round(1000 / (w.abw || prev.water.abw)) : ""}" title="Gợi ý theo lần cân gần nhất"></td><td class="r qtia"><input class="w pr" name="c_tprice" inputmode="numeric" data-orig=""></td><td class="qtia"><select name="c_tto" class="tt" disabled><option value="">–</option>${POND_IDS.filter(x => x !== p).map(x => `<option>${x}</option>`).join("")}</select></td>
+        <td class="qtia" style="white-space:nowrap"><select name="c_ttype" class="tt"><option value="tia">Thu tỉa</option><option value="san">San tôm</option></select> <button class="btn s" data-qxadd="${p}" title="Thêm 1 lần tỉa / san nữa cho ao ${p} (vd san sang 2 ao)">+</button></td><td class="r qtia"><input class="w" name="c_tkg" inputmode="decimal" data-orig="">${tiaDay(p, d)}</td><td class="r qtia"><input class="w" name="c_tsize" inputmode="decimal" data-orig="" placeholder="${(w.abw || (prev && prev.water.abw)) ? "≈" + Math.round(1000 / (w.abw || prev.water.abw)) : ""}" title="Gợi ý theo lần cân gần nhất"></td><td class="r qtia"><input class="w pr" name="c_tprice" inputmode="numeric" data-orig=""></td><td class="qtia"><select name="c_tto" class="tt" disabled><option value="">–</option>${POND_IDS.filter(x => x !== p).map(x => `<option>${x}</option>`).join("")}</select></td>
         <td class="small mut">${prev ? `${fmt(prev.water.abw)} g · ${shortDate(prev.date)}` : "Chưa cân"}</td></tr>`; }).join("")}</table></div>
-    <p class="small mut">Chỉ điền ao có cân tôm, tôm hao hoặc thu tỉa trong ngày, ao khác để trống. Số con hao web tự ước tính theo trọng lượng TB lần cân gần nhất. Thu tỉa / san tôm: mỗi lần lưu là một lần mới (không cộng dồn vào lần trước). Thu tỉa có giá thì tự ghi khoản thu “Bán tôm”. San tôm chọn ao nhận; ao nhận chưa có vụ thì báo Quản lý / Kỹ thuật mở vụ. Thu toàn bộ nhập ở Vụ nuôi.</p>`;
+    <p class="small mut">Chỉ điền ao có cân tôm, tôm hao hoặc thu tỉa trong ngày, ao khác để trống. Số con hao web tự ước tính theo trọng lượng TB lần cân gần nhất. Thu tỉa / san tôm: mỗi lần lưu là một lần mới (không cộng dồn vào lần trước). San 1 ao sang nhiều ao: bấm “+” cạnh ô Tỉa / San để thêm dòng cho ao nhận thứ 2. Thu tỉa có giá thì tự ghi khoản thu “Bán tôm”. San tôm chọn ao nhận; ao nhận chưa có vụ thì báo Quản lý / Kỹ thuật mở vụ. Thu toàn bộ nhập ở Vụ nuôi.</p>`;
   } else {
     const F = WATER.filter(f => f.k !== "abw");
     body = `<div class="tw"><table class="qt"><tr><th>Ao</th>${F.map(f => `<th class="r">${f.n.replace(" (mg/L)", "").replace(" (°C)", " °C").replace(" (‰)", " ‰").replace("Trọng lượng TB (g/con)", "TL TB (g)")}</th>`).join("")}</tr>
@@ -1033,7 +1033,7 @@ document.addEventListener("change", e => {
   if (tr) tr.classList.add("chg");
 });
 document.addEventListener("input", e => {
-  const tr = e.target.closest("tr[data-qp],tr[data-qw],tr[data-qc]"); if (tr) tr.classList.add("chg");
+  const tr = e.target.closest("tr[data-qp],tr[data-qw],tr[data-qc],tr[data-qx]"); if (tr) tr.classList.add("chg");
   if (tr && tr.dataset.qp) { const t = [0, 1, 2].reduce((a, i) => { const v = num(tr.querySelector(`[name=k${i}]`).value); return a + (isNaN(v) ? 0 : v); }, 0);
     tr.querySelector("[data-tot]").textContent = t ? nf.format(Math.round(t * 100) / 100) : "–"; }
   if (e.target.matches(".qt input.w")) { const f = WATER.find(x => "w_" + x.k === e.target.name), v = num(e.target.value); e.target.classList.toggle("bad", !!(f && f.bad && !isNaN(v) && f.bad(v))); }
@@ -1087,6 +1087,16 @@ async function saveMany(d, changes){
   Object.entries(delta).forEach(([it, v]) => { if (Math.abs(v) > 1e-9 && S.items[it] && !S.items[it].noStock) b.update(doc(db, "stockItems", it), { qty: increment(-v) }); });
   await b.commit();
 }
+// Dòng phụ: thêm lần tỉa / san thứ 2 cho cùng 1 ao (vd san 1 ao sang 2 ao nhận)
+function qxRow(p, type){ return `<tr data-qx="${p}" class="qxr"><td class="small mut" style="white-space:nowrap">↳ ${p}</td><td></td><td></td>
+  <td class="qtia"><select name="c_ttype" class="tt"><option value="tia" ${type === "tia" ? "selected" : ""}>Thu tỉa</option><option value="san" ${type === "san" ? "selected" : ""}>San tôm</option></select></td><td class="r qtia"><input class="w" name="c_tkg" inputmode="decimal"></td><td class="r qtia"><input class="w" name="c_tsize" inputmode="decimal"></td><td class="r qtia"><input class="w pr" name="c_tprice" inputmode="numeric" ${type === "san" ? "disabled" : ""}></td><td class="qtia"><select name="c_tto" class="tt" ${type === "san" ? "" : "disabled"}><option value="">–</option>${POND_IDS.filter(x => x !== p).map(x => `<option>${x}</option>`).join("")}</select></td>
+  <td><button class="btn s" data-qxdel title="Bỏ dòng này">✕</button></td></tr>`; }
+document.addEventListener("click", e => {
+  const ad = e.target.closest("[data-qxadd]");
+  if (ad) { const p = ad.dataset.qxadd, rows = document.querySelectorAll(`tr[data-qc="${p}"],tr[data-qx="${p}"]`), last = rows[rows.length - 1], type = document.querySelector(`tr[data-qc="${p}"] [name=c_ttype]`).value;
+    last.insertAdjacentHTML("afterend", qxRow(p, type)); const nr = last.nextElementSibling; nr.querySelector("[name=c_tsize]").placeholder = document.querySelector(`tr[data-qc="${p}"] [name=c_tsize]`).placeholder; nr.querySelector("[name=c_tkg]").focus(); return; }
+  if (e.target.closest("[data-qxdel]")) e.target.closest("tr").remove();
+});
 async function saveTias(d, tias){
   const b = writeBatch(db);
   tias.forEach(x => {
@@ -1137,12 +1147,14 @@ async function quickSave(btn){
     ps.forEach(p => { const l = S.logs[p + "_" + d] || {}; changes[p] = { noteAdd: note || undefined };
       if (add.length) changes[p].treats = (l.treats || []).filter(x => !add.some(a => a.item === x.item)).concat(add); });
   } else if (tab === "can") {
-    for (const tr of $$("tr[data-qc]")) {
-      const p = tr.dataset.qc, a = tr.querySelector("[name=c_abw]"), k = tr.querySelector("[name=c_dead]"), ch = {};
-      const ar = a.value.trim(), kr = k.value.trim();
+    for (const tr of $$("tr[data-qc],tr[data-qx]")) {
+      const p = tr.dataset.qc || tr.dataset.qx, a = tr.querySelector("[name=c_abw]"), k = tr.querySelector("[name=c_dead]"), ch = {};
+      const ar = a ? a.value.trim() : "", kr = k ? k.value.trim() : "";
+      if (a) {
       if (ar !== a.dataset.orig) { if (ar === "") ch.water = { abw:null }; else { const v = num(ar); if (isNaN(v) || v <= 0 || v > 100) return toast(`Ao ${p}: trọng lượng TB không hợp lệ (g/con).`); ch.water = { abw:v }; } }
       if (kr !== k.dataset.orig) { if (kr === "") ch.deadKg = null; else { const v = num(kr); if (isNaN(v) || v < 0) return toast(`Ao ${p}: số kg tôm hao không hợp lệ.`); ch.deadKg = v; } }
       if (Object.keys(ch).length) changes[p] = ch;
+      }
       const tk = tr.querySelector("[name=c_tkg]").value.trim(), ts = tr.querySelector("[name=c_tsize]").value.trim(), tp = tr.querySelector("[name=c_tprice]").value.trim();
       const tt = tr.querySelector("[name=c_ttype]").value, to = tr.querySelector("[name=c_tto]").value;
       if (tk || ts || tp || to) {
